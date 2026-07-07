@@ -3,12 +3,16 @@ const AuthCtx = createContext(null);
 const useAuth = () => useContext(AuthCtx);
 
 const CUISINES = [
-  { key:"all",     label:"All Recipes", emoji:"📖" },
-  { key:"classic", label:"Classic",     emoji:"🍳" },
-  { key:"bbq",     label:"BBQ",         emoji:"🔥" },
-  { key:"arabic",  label:"Arabic",      emoji:"🥘" },
-  { key:"indian",  label:"Indian",      emoji:"🌶️" },
-  { key:"asian",   label:"Asian",       emoji:"🍜" }];
+  { key:"all",        label:"All Recipes",  emoji:"📖" },
+  { key:"classic",    label:"Classic",      emoji:"🍳" },
+  { key:"bbq",        label:"BBQ",          emoji:"🔥" },
+  { key:"arabic",     label:"Arabic",       emoji:"🥘" },
+  { key:"indian",     label:"Indian",       emoji:"🌶️" },
+  { key:"pakistani",  label:"Pakistani",    emoji:"🇵🇰" },
+  { key:"asian",      label:"Asian",        emoji:"🍜" },
+  { key:"portuguese", label:"Portuguese",   emoji:"🇵🇹" },
+  { key:"bosnian",    label:"Bosnian",      emoji:"🇧🇦" },
+  { key:"luxembourg", label:"Luxembourgish",emoji:"🇱🇺" }];
 const DIFF_COLOR = { Easy:"#3D7A4E", Medium:"#D97950", Advanced:"#C0392B" };
 const DIFF_BG    = { Easy:"#EFF6EC",  Medium:"#FEF5EE", Advanced:"#FEF0EE" };
 
@@ -65,9 +69,114 @@ const BOXES = [
   { key:"flock", name:"The Flock",   tagline:"Pure poultry power",    icon:"🍗", color:"#B87333", bg:"#FDF6EE", desc:"All bird, all day. Whole chicken, juicy legs and tender filets — the clean protein pick.", categories:["Poultry Only"], contents:{ lite:["1 whole chicken (1 kg)","4 chicken legs","200g chicken filets"], max:["2 whole chickens (2 kg)","6 chicken legs","500g chicken filets","4 turkey escalopes"], ultra:["3 whole chickens (3.5 kg)","10 chicken legs","1 kg chicken filets","6 turkey escalopes"] }, price:{ lite:39, max:72, ultra:128 } },
   { key:"riot",  name:"Red Riot",    tagline:"Beef meets lamb",        icon:"🥩", color:"#9B3A3A", bg:"#FEF0EE", desc:"The boldest duo in the box. Heritage beef and aromatic lamb — for when you mean business.", categories:["Red Meat Mix"], contents:{ lite:["250g beef sirloin","200g minced beef","2 lamb chops"], max:["500g beef sirloin","400g minced beef","4 lamb chops","300g lamb shoulder"], ultra:["1 kg beef sirloin","800g minced beef","8 lamb chops","600g lamb shoulder","2 lamb racks"] }, price:{ lite:48, max:89, ultra:158 } },
   { key:"bull",  name:"The Bull",    tagline:"Beef. Just beef.",       icon:"🎯", color:"#C0392B", bg:"#FEF2F2", desc:"No distractions. No compromises. Premium dry-aged beef cuts for the serious carnivore.", categories:["Beef Only"], contents:{ lite:["200g ribeye steak","300g minced beef","150g beef tenderloin"], max:["400g ribeye steak","600g minced beef","300g beef tenderloin","300g beef sirloin"], ultra:["800g ribeye steak","1.2 kg minced beef","600g beef tenderloin","600g beef sirloin","400g slow-cook beef"] }, price:{ lite:52, max:96, ultra:172 } },
-  { key:"crown", name:"The Crown",  tagline:"The complete box",  icon:"👑", color:"#1C1917", bg:"#F5F2EE", desc:"The whole show — poultry, beef and lamb. Maximum variety, maximum satisfaction.", categories:["Total Assortment"], contents:{ lite:["1 whole chicken","200g beef sirloin","2 lamb chops","200g minced beef"], max:["2 whole chickens","400g beef sirloin","4 lamb chops","400g minced beef","4 chicken legs","2 lamb chops"], ultra:["3 whole chickens","800g beef sirloin","8 lamb chops","800g minced beef","8 chicken legs","300g beef tenderloin","500g lamb shoulder"] }, price:{ lite:45, max:82, ultra:145 } }];
+  { key:"crown", name:"The Crown",  tagline:"The complete box",  icon:"👑", color:"#1C1917", bg:"#F5F2EE", desc:"The whole show — poultry, beef, veal and lamb. Maximum variety, maximum satisfaction.", categories:["Total Assortment"], contents:{ lite:["1 whole chicken","200g beef sirloin","200g veal escalope","2 lamb chops","200g minced beef"], max:["2 whole chickens","400g beef sirloin","400g veal escalope","4 lamb chops","400g minced beef","4 chicken legs","2 lamb chops"], ultra:["3 whole chickens","800g beef sirloin","600g veal escalope","300g veal tenderloin","8 lamb chops","800g minced beef","8 chicken legs","300g beef tenderloin","500g lamb shoulder"] }, price:{ lite:48, max:88, ultra:156 } }];
 const DELIVERY_FREE_THRESHOLD = 70;
 const DELIVERY_FEE = 8;
+
+/* ─── À LA CARTE CATALOG — sourced from MeatBeast_Pricing_Analysis.xlsx ───────
+   All 39 fresh-meat lines from the butcher's Schedule A price list.
+   Prepared/traiteur items (merguez, kefta, burgers) excluded for now.
+   Prices are the platform per-kg rate from the pricing analysis, except
+   items marked unit:true which are priced per whole item. ─────────────────── */
+const ALC_ITEMS = [
+  // POULTRY (11)
+  { id:1,  cat:"poultry", unit:false, w:"per kg", p:13.29, names:{en:"Chicken Breast Fillet",fr:"Filet de Poulet",de:"Hähnchenbrustfilet",lb:"Poulet-Broscht",bs:"Pileća prsa",pt:"Peito de Frango",ar:"صدر دجاج"} },
+  { id:2,  cat:"poultry", unit:false, w:"per kg", p:7.79,  names:{en:"Chicken Thigh",fr:"Cuisse de Poulet",de:"Hähnchenkeule",lb:"Poulet-Schenkel",bs:"Pileći batak",pt:"Coxa de Frango",ar:"فخذ دجاج"} },
+  { id:3,  cat:"poultry", unit:false, w:"per kg", p:7.69,  names:{en:"Chicken Drumstick",fr:"Pilon de Poulet",de:"Hähnchenschlegel",lb:"Poulet-Ënnerschenkel",bs:"Pileći batak (donji)",pt:"Perna de Frango",ar:"ساق دجاج"} },
+  { id:4,  cat:"poultry", unit:false, w:"per kg", p:7.69,  names:{en:"Chicken Wings",fr:"Ailes de Poulet",de:"Hähnchenflügel",lb:"Poulet-Fligel",bs:"Pileća krila",pt:"Asas de Frango",ar:"أجنحة دجاج"} },
+  { id:5,  cat:"poultry", unit:true,  w:"per unit ~1.4kg", p:6.99, names:{en:"Whole Chicken",fr:"Poulet Entier",de:"Ganzes Hähnchen",lb:"Ganze Poulet",bs:"Cijela piletina",pt:"Frango Inteiro",ar:"دجاجة كاملة"} },
+  { id:6,  cat:"poultry", unit:false, w:"per kg", p:13.39, names:{en:"Free-Range Chicken",fr:"Poulet Fermier",de:"Freilandhähnchen",lb:"Fräilaaf-Poulet",bs:"Domaća piletina",pt:"Frango do Campo",ar:"دجاج بلدي"} },
+  { id:7,  cat:"poultry", unit:false, w:"per kg", p:18.19, names:{en:"Sliced Chicken Strips",fr:"Émincé de Poulet",de:"Hähnchenstreifen",lb:"Poulet-Sträifen",bs:"Piletina na trakice",pt:"Tiras de Frango",ar:"شرائح دجاج"} },
+  { id:8,  cat:"poultry", unit:false, w:"per kg", p:13.29, names:{en:"Chicken Skewer",fr:"Brochette de Poulet",de:"Hähnchenspieß",lb:"Poulet-Spiéss",bs:"Pileći ražnjić",pt:"Espetada de Frango",ar:"شيش طاووق"} },
+  { id:9,  cat:"poultry", unit:false, w:"per kg", p:13.29, names:{en:"Marinated Chicken Wings",fr:"Ailes Marinées",de:"Marinierte Hähnchenflügel",lb:"Mariméiert Fligel",bs:"Marinirana krila",pt:"Asas Marinadas",ar:"أجنحة متبلة"} },
+  { id:10, cat:"poultry", unit:false, w:"per kg", p:12.29, names:{en:"Marinated Chicken Thigh",fr:"Cuisse Marinée",de:"Marinierte Hähnchenkeule",lb:"Mariméierte Schenkel",bs:"Marinirani batak",pt:"Coxa Marinada",ar:"فخذ متبل"} },
+  { id:11, cat:"poultry", unit:false, w:"per kg", p:16.09, names:{en:"Turkey Breast Fillet",fr:"Filet de Dinde",de:"Putenbrustfilet",lb:"Fildung-Broscht",bs:"Pureća prsa",pt:"Peito de Peru",ar:"صدر ديك رومي"} },
+  // BEEF (12)
+  { id:12, cat:"beef", unit:false, w:"per kg", p:49.09, names:{en:"Beef Tenderloin",fr:"Filet de Bœuf",de:"Rinderfilet",lb:"Rëndsfilet",bs:"Goveđi file",pt:"Lombo de Vaca",ar:"فيليه بقري"} },
+  { id:13, cat:"beef", unit:false, w:"per kg", p:27.89, names:{en:"Sirloin Steak",fr:"Faux-Filet",de:"Rinderlende",lb:"Rëndssirloin",bs:"Goveđi biftek",pt:"Alcatra",ar:"ستيك سيرلوين"} },
+  { id:14, cat:"beef", unit:false, w:"per kg", p:30.19, names:{en:"Ribeye Steak",fr:"Entrecôte",de:"Ribeye-Steak",lb:"Ribeye-Steak",bs:"Ribeye odrezak",pt:"Entrecosto",ar:"ريب آي"} },
+  { id:15, cat:"beef", unit:false, w:"per kg", p:25.69, names:{en:"Rump Steak",fr:"Rumsteak",de:"Rumpsteak",lb:"Rëndssirloin (Ronn)",bs:"But odrezak",pt:"Rump Steak",ar:"رامب ستيك"} },
+  { id:16, cat:"beef", unit:false, w:"per kg", p:19.99, names:{en:"Flank Steak",fr:"Bavette",de:"Bauchlappen",lb:"Bavette",bs:"Trbušina",pt:"Bavete",ar:"لحم البطن"} },
+  { id:17, cat:"beef", unit:false, w:"per kg", p:17.89, names:{en:"Minced Beef",fr:"Haché Pur Bœuf",de:"Rinderhack",lb:"Gehackt Rëndfleesch",bs:"Mljevena govedina",pt:"Carne Picada de Vaca",ar:"لحم بقري مفروم"} },
+  { id:18, cat:"beef", unit:false, w:"per kg", p:17.89, names:{en:"Beef Burger Patty",fr:"Burger Bœuf",de:"Rinder-Burgerpatty",lb:"Rëndfleesch-Burger",bs:"Pljeskavica od govedine",pt:"Hambúrguer de Vaca",ar:"برغر بقري"} },
+  { id:19, cat:"beef", unit:false, w:"per kg", p:27.19, names:{en:"Beef Rib on Bone",fr:"Côte à l'Os",de:"Rinderrippe mit Knochen",lb:"Rëndsript mat Schuel",bs:"Goveđe rebro s kosti",pt:"Costela de Vaca",ar:"ضلع بقري بالعظم"} },
+  { id:20, cat:"beef", unit:false, w:"per kg", p:17.19, names:{en:"Beef Stew Pieces",fr:"Ragoût de Bœuf",de:"Rindergulasch",lb:"Rëndfleesch fir Ragout",bs:"Govedina za gulaš",pt:"Carne de Vaca para Ensopado",ar:"لحم بقري للطبخ"} },
+  { id:21, cat:"beef", unit:false, w:"per kg", p:15.59, names:{en:"Beef Shin",fr:"Jarret de Bœuf",de:"Rinderhaxe",lb:"Rëndsjaarret",bs:"Goveđa koljenica",pt:"Chambão de Vaca",ar:"كراع بقري"} },
+  { id:22, cat:"beef", unit:false, w:"per kg", p:30.09, names:{en:"Beef Skewer",fr:"Brochette de Bœuf",de:"Rinderspieß",lb:"Rëndsspiéss",bs:"Goveđi ražnjić",pt:"Espetada de Vaca",ar:"شيش لحم بقري"} },
+  { id:23, cat:"beef", unit:false, w:"per kg", p:29.39, names:{en:"Marinated Sirloin",fr:"Faux-Filet Mariné",de:"Marinierte Rinderlende",lb:"Mariméiert Sirloin",bs:"Marinirani biftek",pt:"Alcatra Marinada",ar:"سيرلوين متبل"} },
+  // VEAL (6) — newly added
+  { id:24, cat:"veal", unit:false, w:"per kg", p:41.09, names:{en:"Veal Tenderloin",fr:"Filet Mignon de Veau",de:"Kalbsfilet",lb:"Kallefleesch-Filet",bs:"Teleći file",pt:"Lombo de Vitela",ar:"فيليه عجل"} },
+  { id:25, cat:"veal", unit:false, w:"per kg", p:26.79, names:{en:"Veal Escalope",fr:"Escalope de Veau",de:"Kalbsschnitzel",lb:"Kallefleesch-Eskalop",bs:"Teleći odrezak",pt:"Escalope de Vitela",ar:"إسكالوب عجل"} },
+  { id:26, cat:"veal", unit:false, w:"per kg", p:25.59, names:{en:"Veal Chop",fr:"Côtelette de Veau",de:"Kalbskotelett",lb:"Kallefleesch-Kotelett",bs:"Teleći kotlet",pt:"Costeleta de Vitela",ar:"قطعة عجل"} },
+  { id:27, cat:"veal", unit:false, w:"per kg", p:26.79, names:{en:"Veal Roast",fr:"Rôti de Veau",de:"Kalbsbraten",lb:"Kallefleesch-Braten",bs:"Teleće pečenje",pt:"Assado de Vitela",ar:"روستو عجل"} },
+  { id:28, cat:"veal", unit:false, w:"per kg", p:17.79, names:{en:"Minced Veal",fr:"Haché Pur Veau",de:"Kalbshack",lb:"Gehackt Kallefleesch",bs:"Mljevena teletina",pt:"Carne Picada de Vitela",ar:"لحم عجل مفروم"} },
+  { id:29, cat:"veal", unit:false, w:"per kg", p:29.49, names:{en:"Sliced Veal",fr:"Émincé de Veau",de:"Kalbsstreifen",lb:"Kallefleesch-Sträifen",bs:"Teletina na trakice",pt:"Tiras de Vitela",ar:"شرائح عجل"} },
+  // LAMB (10)
+  { id:30, cat:"lamb", unit:false, w:"per kg", p:27.19, names:{en:"Lamb Chops",fr:"Côtelettes d'Agneau",de:"Lammkoteletts",lb:"Lammkoteletten",bs:"Jagnjeći kotleti",pt:"Costeletas de Borrego",ar:"قطع لحم خروف"} },
+  { id:31, cat:"lamb", unit:false, w:"per kg", p:27.39, names:{en:"Leg of Lamb",fr:"Gigot d'Agneau",de:"Lammkeule",lb:"Lammschanken",bs:"Jagnjeći but",pt:"Perna de Borrego",ar:"فخذ خروف"} },
+  { id:32, cat:"lamb", unit:false, w:"per kg", p:29.39, names:{en:"Lamb Leg Steak",fr:"Tranche de Gigot",de:"Lammkeulensteak",lb:"Schank-Schnëtt",bs:"Odrezak od buta",pt:"Bife da Perna de Borrego",ar:"شريحة فخذ خروف"} },
+  { id:33, cat:"lamb", unit:false, w:"per kg", p:28.29, names:{en:"Lamb Shoulder",fr:"Épaule d'Agneau",de:"Lammschulter",lb:"Lammschëller",bs:"Jagnjeća plećka",pt:"Pá de Borrego",ar:"كتف خروف"} },
+  { id:34, cat:"lamb", unit:false, w:"per kg", p:21.19, names:{en:"Lamb Neck",fr:"Collier d'Agneau",de:"Lammhals",lb:"Lammhals",bs:"Jagnjeći vrat",pt:"Pescoço de Borrego",ar:"رقبة خروف"} },
+  { id:35, cat:"lamb", unit:false, w:"per kg", p:16.69, names:{en:"Lamb Breast",fr:"Poitrine d'Agneau",de:"Lammbrust",lb:"Lammbrëscht",bs:"Jagnjeće grudi",pt:"Peito de Borrego",ar:"صدر خروف"} },
+  { id:36, cat:"lamb", unit:false, w:"per kg", p:29.49, names:{en:"Marinated Lamb Rack",fr:"Côte d'Agneau Marinée",de:"Marinierter Lammrücken",lb:"Mariméiert Lammripp",bs:"Marinirana jagnjeća rebra",pt:"Carré de Borrego Marinado",ar:"ريش خروف متبلة"} },
+  { id:37, cat:"lamb", unit:false, w:"per kg", p:40.19, names:{en:"Lamb Skewer",fr:"Brochette d'Agneau",de:"Lammspieß",lb:"Lammspiéss",bs:"Jagnjeći ražnjić",pt:"Espetada de Borrego",ar:"شيش خروف"} },
+  { id:38, cat:"lamb", unit:false, w:"per kg", p:21.19, names:{en:"Minced Lamb",fr:"Haché d'Agneau",de:"Lammhack",lb:"Gehackt Lammfleesch",bs:"Mljevena jagnjetina",pt:"Carne Picada de Borrego",ar:"لحم خروف مفروم"} },
+  { id:39, cat:"lamb", unit:true,  w:"per unit ~1.2kg", p:26.09, names:{en:"Half Leg of Lamb",fr:"Demi-Gigot",de:"Halbe Lammkeule",lb:"Hallef Lammschank",bs:"Pola jagnjećeg buta",pt:"Meia Perna de Borrego",ar:"نصف فخذ خروف"} },
+];
+function alcName(item,lang){ return item.names[lang]||item.names.fr||item.names.en; }
+
+/* ─── Ingredient-aware recipe matching — used by the cart to suggest recipes
+   based on which à la carte / BYOB cuts are currently in the basket ────────── */
+const CUT_KEYWORDS = ["tenderloin","sirloin","ribeye","rump","flank","mince","minced","burger","rib","stew","shin","skewer","escalope","chop","roast","shoulder","neck","breast","rack","leg","wing","thigh","drumstick","whole","strips"];
+function matchRecipesForCart(alcIds, extraKeywords){
+  const hasIds = alcIds && alcIds.length>0;
+  const hasExtra = extraKeywords && extraKeywords.length>0;
+  if(!hasIds && !hasExtra) return [];
+  const keywords = new Set();
+  if(hasIds){
+    alcIds.forEach(id=>{
+      const it = ALC_ITEMS.find(x=>x.id===id);
+      if(!it) return;
+      const n = it.names.en.toLowerCase();
+      if(it.cat==="poultry") keywords.add(n.includes("turkey")?"turkey":"chicken");
+      if(it.cat==="beef") keywords.add("beef");
+      if(it.cat==="veal") keywords.add("veal");
+      if(it.cat==="lamb") keywords.add("lamb");
+      CUT_KEYWORDS.forEach(w=>{ if(n.includes(w)) keywords.add(w); });
+    });
+  }
+  if(hasExtra) extraKeywords.forEach(k=>keywords.add(k));
+  const all = [...ALL_RECIPES.flock,...ALL_RECIPES.riot,...ALL_RECIPES.bull,...ALL_RECIPES.crown];
+  const scored = all.map(r=>{
+    const hay = (r.tag+" "+r.ingredients.join(" ")).toLowerCase();
+    let score=0;
+    keywords.forEach(k=>{ if(hay.includes(k)) score++; });
+    return {r,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  // de-dupe by id, keep top 4
+  const seen=new Set(); const out=[];
+  for(const {r} of scored){ if(!seen.has(r.id)){ seen.add(r.id); out.push(r); } if(out.length>=4) break; }
+  return out;
+}
+const ALC_CAT_LABELS = {
+  en:{all:"All",poultry:"Poultry",beef:"Beef",veal:"Veal",lamb:"Lamb"},
+  fr:{all:"Tout",poultry:"Volaille",beef:"Bœuf",veal:"Veau",lamb:"Agneau"},
+  de:{all:"Alle",poultry:"Geflügel",beef:"Rind",veal:"Kalb",lamb:"Lamm"},
+  lb:{all:"All",poultry:"Gefligel",beef:"Rëndfleesch",veal:"Kallefleesch",lamb:"Lamm"},
+  bs:{all:"Sve",poultry:"Perad",beef:"Govedina",veal:"Teletina",lamb:"Jagnjetina"},
+  pt:{all:"Tudo",poultry:"Aves",beef:"Bovino",veal:"Vitela",lamb:"Cordeiro"},
+  ar:{all:"الكل",poultry:"دواجن",beef:"بقري",veal:"عجل",lamb:"لحم الخروف"},
+};
+const AC_UI = {
+  en:{individualTab:"Individual Cuts",byobTab:"🧺 Build Your Own Box",namePlaceholder:"Name your box (e.g. \"Ahmed's Weekend Grill\")",selected:"selected",subtotalLbl:"Subtotal",scheduleBtn:"Schedule delivery →",clear:"Clear"},
+  fr:{individualTab:"Morceaux Individuels",byobTab:"🧺 Composez Votre Box",namePlaceholder:"Nommez votre box (ex. « Grill du Weekend »)",selected:"sélectionné(s)",subtotalLbl:"Sous-total",scheduleBtn:"Planifier la livraison →",clear:"Effacer"},
+  de:{individualTab:"Einzelne Cuts",byobTab:"🧺 Eigene Box Zusammenstellen",namePlaceholder:"Benenne deine Box (z. B. „Wochenend-Grill“)",selected:"ausgewählt",subtotalLbl:"Zwischensumme",scheduleBtn:"Lieferung planen →",clear:"Leeren"},
+  lb:{individualTab:"Eenzel Stécker",byobTab:"🧺 Bau Deng Eege Box",namePlaceholder:"Gëff denger Box en Numm (z.B. \"Weekend-Grill\")",selected:"ausgewielt",subtotalLbl:"Zwëschesumm",scheduleBtn:"Liwwerung plangen →",clear:"Läeren"},
+  bs:{individualTab:"Pojedinačni Komadi",byobTab:"🧺 Napravi Svoju Kutiju",namePlaceholder:"Nazovi svoju kutiju (npr. \"Vikend Roštilj\")",selected:"odabrano",subtotalLbl:"Međuzbroj",scheduleBtn:"Zakaži dostavu →",clear:"Obriši"},
+  pt:{individualTab:"Cortes Individuais",byobTab:"🧺 Monta a Tua Caixa",namePlaceholder:"Dá um nome à tua caixa (ex. \"Grelhados do Fim de Semana\")",selected:"selecionado(s)",subtotalLbl:"Subtotal",scheduleBtn:"Agendar entrega →",clear:"Limpar"},
+  ar:{individualTab:"قطع فردية",byobTab:"🧺 كوّن صندوقك الخاص",namePlaceholder:"سمِّ صندوقك (مثال: \"شواء نهاية الأسبوع\")",selected:"محدد",subtotalLbl:"المجموع الفرعي",scheduleBtn:"جدولة التوصيل ←",clear:"مسح"},
+};
+const AC_UI_FALLBACK = AC_UI.en;
 
 /* ─── BOX TRANSLATIONS ───────────────────────────────────────────────────── */
 
@@ -96,6 +205,14 @@ const RECIPE_MACROS = {
   a5:{cal:680,protein:44,carbs:68,fat:24},  a6:{cal:360,protein:38,carbs:18,fat:16},
   a7:{cal:440,protein:42,carbs:22,fat:22},  a8:{cal:420,protein:44,carbs:8,fat:22},
   a9:{cal:500,protein:46,carbs:12,fat:30},  a10:{cal:460,protein:38,carbs:24,fat:24},
+  f13:{cal:420,protein:40,carbs:4,fat:26},  f14:{cal:520,protein:38,carbs:14,fat:34},
+  f15:{cal:440,protein:40,carbs:10,fat:26}, f16:{cal:480,protein:32,carbs:52,fat:14},
+  r13:{cal:460,protein:34,carbs:20,fat:26}, r14:{cal:420,protein:36,carbs:6,fat:28},
+  r15:{cal:520,protein:42,carbs:10,fat:34}, r16:{cal:440,protein:42,carbs:2,fat:28},
+  b13:{cal:480,protein:40,carbs:22,fat:24}, b14:{cal:560,protein:44,carbs:16,fat:34},
+  b15:{cal:440,protein:34,carbs:12,fat:28}, b16:{cal:520,protein:40,carbs:8,fat:36},
+  a11:{cal:460,protein:36,carbs:26,fat:22}, a12:{cal:540,protein:46,carbs:8,fat:34},
+  a13:{cal:500,protein:42,carbs:12,fat:30}, a14:{cal:460,protein:40,carbs:10,fat:26},
 };
 
 /* ─── RECIPE STEP TRANSLATIONS (FR + DE full · PT/AR titles only) ─────────── */
@@ -469,6 +586,54 @@ fr:{
       {title:"Fatteh",desc:"Faire revenir le boeuf haché épicé. Superposer pain toasté, boeuf, yaourt et pois chiches."},
       {title:"Disposer",desc:"Disposer tout sur de petites assiettes sur toute la table."},
       {title:"Partager",desc:"Le mezze est communautaire — tout le monde picore et partage. Servir avec du pain pita."}]},
+  f13:{
+    ingredients:["1 poulet entier, ouvert en crapaudine","6 piments piri-piri ou piments oiseau rouges","6 gousses d'ail","Jus de 2 citrons","4 c. à soupe d'huile d'olive","1 c. à soupe de paprika","1 c. à café d'origan","Sel"],
+    steps:[{title:"Sauce",desc:"Mixer piments, ail, citron, huile, paprika, origan et sel en une marinade lisse."},{title:"Mariner",desc:"Enduire le poulet entièrement, dedans et dehors. Laisser mariner au moins 4 heures, idéalement toute une nuit."},{title:"Griller",desc:"Griller côté peau vers le bas à feu moyen 20 min, puis retourner et cuire 20 min de plus."},{title:"Badigeonner",desc:"Badigeonner de sauce supplémentaire toutes les 10 minutes pour une finition collante et grillée."},{title:"Servir",desc:"Laisser reposer 5 min. Servir avec des frites et une salade verte simple."}]},
+  f14:{
+    ingredients:["500g de filets de poulet en cubes","200ml de lait de coco ou de crème","2 oignons émincés","3 gousses d'ail","2cm de gingembre","2 c. à café de garam masala","1 c. à café de curcuma","Une poignée de noix de cajou moulues","Ghee"],
+    steps:[{title:"Base d'oignon",desc:"Faire revenir les oignons dans le ghee 10 min jusqu'à tendreté et couleur dorée. Mixer avec l'ail et le gingembre en pâte."},{title:"Épices",desc:"Remettre la pâte dans la poêle. Ajouter curcuma et garam masala. Cuire 2 min jusqu'à parfum."},{title:"Poulet",desc:"Ajouter le poulet. Cuire 8 min en remuant, jusqu'à saisie de tous les côtés."},{title:"Mijoter",desc:"Ajouter le lait de coco et les noix de cajou moulues. Mijoter 15 min jusqu'à ce que le poulet soit tendre et la sauce épaississe."},{title:"Finition",desc:"Goûter et ajuster le sel. Servir avec du riz ou du naan."}]},
+  f15:{
+    ingredients:["800g de morceaux de poulet avec os","4 tomates coupées","4 piments verts fendus","2 c. à soupe de gingembre en julienne","4 gousses d'ail","1 c. à café de graines de cumin","1 c. à café de piment rouge en poudre","1 c. à café de coriandre en poudre","Coriandre fraîche","Huile ou ghee"],
+    steps:[{title:"Saisir le poulet",desc:"Faire revenir les morceaux de poulet dans l'huile chaude dans un karahi ou un wok jusqu'à saisie, environ 8 min."},{title:"Aromates",desc:"Ajouter l'ail et la moitié du gingembre. Cuire 2 min. Ajouter toutes les épices sèches."},{title:"Tomates",desc:"Ajouter les tomates coupées. Cuire à découvert à feu vif, en écrasant de temps en temps, 12–15 min jusqu'à ce que l'huile se sépare."},{title:"Réduire",desc:"La sauce doit napper le poulet, pas être liquide — continuer à cuire à feu vif si trop humide."},{title:"Finition",desc:"Garnir avec le reste du gingembre, piments verts et coriandre. Servir avec du naan."}]},
+  f16:{
+    ingredients:["500g de morceaux de poulet","300g de riz long grain","1 oignon coupé en dés","1 carotte râpée","2 c. à soupe de concentré de tomate","500ml de bouillon de poulet","1 c. à café de paprika","Feuille de laurier","Huile"],
+    steps:[{title:"Dorer le poulet",desc:"Dorer les morceaux de poulet dans l'huile dans une cocotte épaisse. Retirer et réserver."},{title:"Légumes",desc:"Faire revenir l'oignon et la carotte dans la même cocotte 8 min jusqu'à tendreté. Ajouter le concentré de tomate et le paprika."},{title:"Combiner",desc:"Remettre le poulet dans la cocotte. Ajouter le riz, le bouillon et le laurier. Remuer une fois."},{title:"Mijoter",desc:"Couvrir et laisser mijoter à feu doux 25 min sans remuer — cela garde le riz moelleux."},{title:"Repos",desc:"Laisser reposer hors du feu, couvert, 5 min avant de servir."}]},
+  r13:{
+    ingredients:["500g de bœuf haché","200g d'agneau haché","1 oignon râpé et essoré","1 c. à café de bicarbonate de soude","Sel et poivre noir","Somun ou pain pita","Oignon cru, kajmak ou crème fraîche pour servir"],
+    steps:[{title:"Mélanger",desc:"Combiner bœuf, agneau, oignon, bicarbonate, sel et poivre. Pétrir vigoureusement 5 min jusqu'à ce que ça se lie."},{title:"Repos",desc:"Réfrigérer le mélange au moins 2 heures — cela raffermit la texture."},{title:"Façonner",desc:"Rouler en petites saucisses de la taille d'un doigt, environ 8cm, avec des mains mouillées."},{title:"Griller",desc:"Griller à feu vif, en retournant souvent, 8–10 min jusqu'à belle coloration à l'extérieur."},{title:"Servir",desc:"Farcir le somun chaud avec les ćevapi, de l'oignon cru en dés et une généreuse cuillère de kajmak ou de crème fraîche."}]},
+  r14:{
+    ingredients:["600g d'agneau haché","1 oignon finement râpé","3 gousses d'ail","2cm de gingembre râpé","2 piments verts émincés","1 c. à café de garam masala","1 c. à café de cumin en poudre","Coriandre et menthe fraîches hachées","1 œuf (liant)"],
+    steps:[{title:"Mélanger",desc:"Combiner tous les ingrédients minutieusement à la main. Le mélange doit être légèrement collant."},{title:"Repos",desc:"Réfrigérer 1 heure — cela facilite grandement le façonnage sur les brochettes."},{title:"Façonner",desc:"Mains mouillées, mouler le mélange autour de brochettes métalliques plates en longues saucisses, en pressant fermement."},{title:"Griller",desc:"Griller à feu moyen-vif, en retournant régulièrement, 10–12 min jusqu'à coloration et cuisson complète."},{title:"Servir",desc:"Servir avec chutney à la menthe, oignon émincé et naan."}]},
+  r15:{
+    ingredients:["800g d'épaule d'agneau avec os, en cubes","4 tomates coupées","2 c. à soupe de gingembre en julienne","5 gousses d'ail","4 piments verts","1 c. à café de piment rouge en poudre","1 c. à café de coriandre en poudre","½ c. à café de curcuma","Ghee ou huile","Coriandre fraîche"],
+    steps:[{title:"Saisir l'agneau",desc:"Dorer les morceaux d'agneau dans le ghee chaud dans un karahi ou une cocotte épaisse, environ 10 min."},{title:"Aromates",desc:"Ajouter l'ail et la moitié du gingembre. Ajouter toutes les épices sèches. Cuire 2 min."},{title:"Tomates et mijotage",desc:"Ajouter les tomates. Couvrir et laisser mijoter à feu moyen-doux 35–40 min jusqu'à ce que l'agneau soit tendre, en remuant occasionnellement."},{title:"Réduire",desc:"Découvrir, augmenter le feu et faire réduire le liquide en excès jusqu'à ce que la sauce nappe la viande."},{title:"Finition",desc:"Garnir avec le reste du gingembre, piments verts et coriandre. Servir avec du roti."}]},
+  r16:{
+    ingredients:["600g de faux-filet de bœuf en gros cubes","8 gousses d'ail coupées en deux","2 feuilles de laurier déchirées","3 c. à soupe d'huile d'olive","Gros sel de mer","Poivre noir"],
+    steps:[{title:"Mariner",desc:"Mélanger les cubes de bœuf avec l'ail, le laurier, l'huile d'olive, le sel et le poivre. Mariner au moins 2 heures."},{title:"Embrocher",desc:"Enfiler alternativement bœuf et ail sur des brochettes — traditionnellement des branches de laurier."},{title:"Griller",desc:"Griller à feu vif 8–10 min au total, en retournant toutes les 2 min pour une coloration uniforme."},{title:"Repos",desc:"Laisser reposer 3 min hors du feu."},{title:"Servir",desc:"Servir avec du pain de maïs portugais (bolo do caco) ou des frites, et un verre de vin rouge."}]},
+  b13:{
+    ingredients:["800g de bœuf à braiser en cubes","3 oignons émincés","2 c. à soupe de paprika doux","1 c. à soupe de concentré de tomate","500ml de bouillon de bœuf","2 feuilles de laurier","1 c. à soupe de farine","Beurre ou huile","Pommes de terre bouillies pour servir"],
+    steps:[{title:"Oignons",desc:"Cuire les oignons émincés dans le beurre à feu doux 15 min jusqu'à ramollissement profond et coloration dorée."},{title:"Dorer le bœuf",desc:"Ajouter le bœuf par lots, en dorant bien de tous les côtés."},{title:"Épices",desc:"Incorporer le paprika et le concentré de tomate. Cuire 2 min. Saupoudrer de farine et mélanger."},{title:"Braiser",desc:"Ajouter le bouillon et le laurier. Couvrir et laisser mijoter très doucement 1h30 jusqu'à ce que le bœuf soit tendre à la fourchette."},{title:"Servir",desc:"Servir sur des pommes de terre bouillies avec une cuillère de crème fraîche."}]},
+  b14:{
+    ingredients:["1kg de jarret de bœuf avec os","4 c. à soupe de masala nihari (ou mélange maison : coriandre, fenouil, gingembre en poudre, piment)","3 c. à soupe de farine, grillée jusqu'à brunir","4 c. à soupe de ghee","1 oignon émincé","Pâte de gingembre et d'ail","Gingembre frais, coriandre, piment vert, citron pour garnir"],
+    steps:[{title:"Saisir",desc:"Dorer le jarret de bœuf dans le ghee avec l'oignon jusqu'à coloration profonde, environ 15 min."},{title:"Épices",desc:"Ajouter la pâte de gingembre-ail et le masala nihari. Cuire 3 min jusqu'à parfum."},{title:"Cuisson lente",desc:"Couvrir généreusement d'eau. Couvrir et laisser mijoter à feu très doux 2h30–3h jusqu'à ce que le bœuf se défasse."},{title:"Épaissir",desc:"Fouetter la farine grillée avec un peu d'eau en une bouillie. Incorporer au ragoût pour épaissir."},{title:"Servir",desc:"Laisser mijoter 10 minutes de plus. Garnir de gingembre, coriandre, piment et citron. Servir avec du naan."}]},
+  b15:{
+    ingredients:["600g de bœuf haché","1 oignon finement haché","2 tomates épépinées et finement hachées","2 piments verts émincés","1 c. à soupe de graines de grenade séchées (anardana), écrasées","1 c. à café de graines de coriandre écrasées","1 œuf","2 c. à soupe de farine de maïs","Coriandre fraîche"],
+    steps:[{title:"Mélanger",desc:"Combiner tous les ingrédients à la main jusqu'à bonne répartition — ne pas trop travailler la viande."},{title:"Repos",desc:"Réfrigérer 20 min pour que les galettes tiennent mieux à la cuisson."},{title:"Façonner",desc:"Former des galettes larges et plates d'environ 1cm d'épaisseur — chapli signifie « plat » en pashto."},{title:"Frire",desc:"Frire dans une poêle généreusement huilée à feu moyen 5–6 min par face jusqu'à coloration dorée et bords croustillants."},{title:"Servir",desc:"Servir chaud avec du naan, des rondelles d'oignon cru et un quartier de citron."}]},
+  b16:{
+    ingredients:["2 fines entrecôtes de bœuf","3 gousses d'ail émincées","3 c. à soupe de beurre","100ml de café noir fort (espresso convient)","1 c. à soupe de moutarde de Dijon","Un trait de vin blanc ou de bière","Sel et poivre","Frites pour servir"],
+    steps:[{title:"Assaisonner",desc:"Assaisonner généreusement les steaks de sel et de poivre."},{title:"Saisir",desc:"Saisir les steaks fort et vite dans une poêle chaude, 2 min par face pour des coupes fines. Retirer et laisser reposer."},{title:"Sauce",desc:"Dans la même poêle, faire revenir l'ail dans le beurre 1 min. Ajouter le café, la moutarde et le vin. Mijoter 3 min pour réduire légèrement."},{title:"Combiner",desc:"Remettre les steaks brièvement dans la poêle pour les enrober de sauce."},{title:"Servir",desc:"Dresser avec beaucoup de sauce versée dessus et une montagne de frites."}]},
+  a11:{
+    ingredients:["300g de bœuf en cubes","300g d'épaule d'agneau en cubes","2 pommes de terre en morceaux","2 carottes en morceaux","1 chou en quartiers","2 oignons émincés","2 feuilles de laurier","Grains de poivre entiers","Persil frais"],
+    steps:[{title:"Superposer",desc:"Dans une cocotte épaisse, superposer alternativement viande et légumes — viande, oignon, pomme de terre, carotte, chou, répéter."},{title:"Assaisonner",desc:"Ajouter laurier, grains de poivre et sel entre les couches. Ne pas remuer une fois superposé."},{title:"Couvrir d'eau",desc:"Ajouter de l'eau juste pour couvrir la couche supérieure."},{title:"Cuisson lente",desc:"Couvrir hermétiquement et laisser mijoter à feu très doux 2 à 2h30 sans remuer."},{title:"Servir",desc:"Servir directement de la cocotte, parsemé de persil frais avec du pain croustillant à côté."}]},
+  a12:{
+    ingredients:["4 cuisses de poulet","4 côtelettes d'agneau","400g de faux-filet de bœuf","3 c. à soupe de moutarde","2 c. à soupe d'herbes de Provence","Huile d'olive","Sel et poivre","Tomates grillées et haricots verts pour servir"],
+    steps:[{title:"Assaisonner",desc:"Enduire toutes les viandes d'huile d'olive, moutarde, herbes de Provence, sel et poivre."},{title:"Repos",desc:"Laisser les viandes revenir à température ambiante, environ 20 min, pendant que le gril chauffe."},{title:"Griller le poulet d'abord",desc:"Les cuisses de poulet prennent le plus de temps — griller 6–7 min par face jusqu'à cuisson complète."},{title:"Griller agneau et bœuf",desc:"Griller les côtelettes d'agneau et le faux-filet 3–4 min par face pour une cuisson à point."},{title:"Dresser",desc:"Disposer toutes les viandes sur un grand plat avec tomates grillées et haricots verts."}]},
+  a13:{
+    ingredients:["400g de bœuf haché (pour seekh)","500g de cuisses de poulet en cubes","4 côtelettes d'agneau","Yaourt, pâte de gingembre-ail, garam masala, piment en poudre, cumin pour les marinades","Citron, rondelles d'oignon, chutney à la menthe pour servir"],
+    steps:[{title:"Mariner le poulet",desc:"Enrober les cubes de poulet de yaourt, gingembre-ail, garam masala et piment. Mariner 2 heures."},{title:"Assaisonner l'agneau",desc:"Enduire les côtelettes d'agneau d'ail, cumin, piment en poudre et un peu d'huile."},{title:"Façonner le seekh",desc:"Mélanger le bœuf haché avec gingembre, ail, piment et coriandre. Mouler sur des brochettes."},{title:"Tout griller",desc:"Griller les brochettes de poulet, côtelettes d'agneau et seekh kebabs, en retournant régulièrement, 10–15 min au total jusqu'à coloration et cuisson complète."},{title:"Servir",desc:"Disposer sur un grand plat avec quartiers de citron, rondelles d'oignon et chutney à la menthe."}]},
+  a14:{
+    ingredients:["4 pilons de poulet","4 côtelettes d'agneau","300g de yaourt épais","2 c. à soupe de masala tandoori","1 c. à soupe de pâte de gingembre-ail","1 c. à café de piment rouge en poudre","Jus d'1 citron","Huile de moutarde ou huile végétale"],
+    steps:[{title:"Première marinade",desc:"Enduire poulet et agneau de jus de citron, sel et un peu de piment en poudre. Laisser reposer 20 min."},{title:"Deuxième marinade",desc:"Mélanger yaourt, masala tandoori, pâte de gingembre-ail et huile. Enrober bien les viandes. Mariner au moins 4 heures, idéalement toute une nuit."},{title:"Préchauffer",desc:"Chauffer fortement le gril ou le four — le tandoori nécessite une chaleur vive pour bien griller."},{title:"Griller",desc:"Griller le poulet 20–25 min et les côtelettes d'agneau 8–10 min, en retournant occasionnellement, en badigeonnant du reste de marinade."},{title:"Servir",desc:"Griller légèrement plus directement à la flamme à la fin si possible. Servir avec chutney à la menthe et oignon émincé."}]},
 },
 de:{
   f1:{
@@ -1797,6 +1962,22 @@ const RECIPE_META_T = {
     a8:{name:"Plateau Tandoori mixte",desc:"Un plateau tandoori complet — poulet et agneau marinés, grillés au charbon.",tip:"La marinade au yaourt attendrit ET protège de la chaleur intense."},
     a9:{name:"Plateau BBQ portugais",desc:"Poulet piri-piri, bœuf et côtelettes d'agneau grillés — une fête sur un plateau.",tip:"Un bon piri-piri doit vous faire transpirer un peu — ne retenez pas les piments."},
     a10:{name:"Festin mezze levantin",desc:"Un assortiment de petits plats autour de différentes viandes — le repas social.",tip:"Le mezze est conçu pour être lent et convivial. Installez tout et prenez votre temps."},
+  f13:{name:"Frango Piri-Piri (Poulet Grillé Portugais)",desc:"Le plat qui a rendu le poulet portugais célèbre dans le monde entier. Épicé, à l'ail, inoubliable.",tip:"La sauce piri-piri s'améliore après une journée au réfrigérateur — en faire le double et en garder pour badigeonner."},
+  f14:{name:"Korma de Poulet",desc:"Riche, crémeux et délicatement épicé — le curry doux qui séduit toute la table.",tip:"Les noix de cajou moulues sont l'épaississant traditionnel qui donne au korma sa texture soyeuse."},
+  f15:{name:"Chicken Karahi",desc:"Le curry de poulet au wok bien-aimé du Pakistan — riche en tomates, gingembre prononcé, style restaurant à la maison.",tip:"Un vrai karahi n'a presque pas d'eau ajoutée — les tomates et le poulet créent toute la sauce."},
+  f16:{name:"Bosanski Pilav (Pilaf de Poulet Bosniaque)",desc:"Un plat de riz balkanique réconfortant, poulet et riz mijotés lentement ensemble dans une seule casserole.",tip:"Résister à l'envie de remuer pendant la cuisson du riz — c'est le secret d'un pilaf qui n'est pas pâteux."},
+  r13:{name:"Ćevapi avec Somun",desc:"Le street-food le plus emblématique des Balkans — saucisses de viande hachée grillées dans un pain plat moelleux.",tip:"Le bicarbonate de soude est le secret balkanique — il garde les ćevapi légers et tendres, jamais denses."},
+  r14:{name:"Kebab Seekh d'Agneau",desc:"Agneau haché épicé moulé sur des brochettes et grillé au charbon — un essentiel du BBQ pakistanais.",tip:"Des brochettes plates (pas rondes) empêchent le kebab de tourner et de se détacher sur le gril."},
+  r15:{name:"Lamb Karahi",desc:"Agneau avec os cuit rapidement et à feu vif dans une base de tomate et gingembre — savoureux, favori des restaurants.",tip:"L'agneau avec os donne au karahi sa profondeur de saveur — ne pas substituer par du désossé si possible."},
+  r16:{name:"Espetada (Brochettes de Bœuf Portugaises)",desc:"Les célèbres brochettes de bœuf à l'ail de Madère, traditionnellement grillées à feu ouvert.",tip:"Les morceaux d'ail se caramélisent et s'adoucissent — ne pas les négliger, les manger."},
+  b13:{name:"Goulash de Bœuf Luxembourgeois",desc:"Une version luxembourgeoise généreuse du classique d'Europe centrale — riche, profondément paprika, fait pour les soirées froides.",tip:"Cuisson lente et douce non négociable ici — précipiter le braisage donne un bœuf sec et dur."},
+  b14:{name:"Nihari de Bœuf",desc:"Le légendaire ragoût pakistanais mijoté lentement, traditionnellement laissé toute la nuit pour le petit-déjeuner. Profond, sombre et inoubliable.",tip:"Griller la farine jusqu'à brun foncé avant de l'ajouter donne au nihari sa couleur sombre caractéristique et sa profondeur de noisette."},
+  b15:{name:"Chapli Kebab",desc:"Les célèbres galettes de bœuf haché plates et croustillantes de Peshawar, pleines de graines de grenade et de coriandre.",tip:"La tomate et l'oignon doivent être très finement hachés, presque en purée — cela garde les galettes tendres à l'intérieur."},
+  b16:{name:"Bife à Café (Steak au Beurre-Café Portugais)",desc:"Un classique des cafés de Lisbonne — un steak fin dans une sauce brillante au beurre, ail et café. Ça semble étrange, c'est incroyable.",tip:"Ne pas éviter le café en pensant qu'il sera amer — il s'adoucit en une base savoureuse et profonde pour la sauce."},
+  a11:{name:"Bosanski Lonac (Marmite de Viandes Bosniaque)",desc:"Le plat national bosniaque en une marmite — couches de bœuf, agneau et légumes mijotés ensemble dans un pot en argile.",tip:"La magie du lonac est la patience — résister à l'envie de remuer. Les couches cuisent les unes dans les autres naturellement."},
+  a12:{name:"Assiette Grillée Mixte Luxembourgeoise",desc:"Un plat grillé généreux de style luxembourgeois — assaisonnement simple, viande de qualité, confort bistro classique.",tip:"Échelonner les temps de cuisson permet à tout de finir et reposer ensemble — prévoir le poulet en premier."},
+  a13:{name:"Plateau de Grillades Mixtes Pakistanais",desc:"Kebab seekh, tikka de poulet et côtelettes d'agneau ensemble sur un plateau fumé et épicé — un favori du BBQ pakistanais.",tip:"Échelonner le gril pour que tout arrive chaud à table ensemble — poulet et seekh cuisent à vitesse similaire, commencer l'agneau un peu plus tôt."},
+  a14:{name:"Grillades Mixtes Tandoori Indiennes",desc:"Poulet tandoori classique et côtelettes d'agneau, grillés au charbon avec une marinade fumée au yaourt — saveur tandoor de restaurant à la maison.",tip:"La double marinade — acide d'abord, puis yaourt-épices — est la véritable technique tandoori et fait une différence notable."},
   },
   de:{
     f1:{name:"Ofenhähnchen",desc:"Der Sonntags-Klassiker. Knusprige Haut, saftiges Fleisch, unschlagbares Aroma.",tip:"Kräuterbutter unter die Haut reiben vor dem Braten — das gibt Next-Level-Geschmack."},
@@ -1845,6 +2026,22 @@ const RECIPE_META_T = {
     a8:{name:"Gemischter Tandoori-Teller",desc:"Ein kompletter Tandoori-Teller — Hähnchen und Lamm, am Grill verkohlt.",tip:"Die Joghurt-Marinade macht zart UND schützt vor der intensiven Hitze."},
     a9:{name:"Portugiesischer BBQ-Teller",desc:"Piri-piri-Hähnchen, gegrilltes Rindfleisch und Lammkoteletts — ein Fest auf einem Brett.",tip:"Gutes Piri-piri sollte einen ein wenig schwitzen lassen — keine Zurückhaltung bei den Chilis."},
     a10:{name:"Levantinisches Mezze-Fest",desc:"Eine Auswahl kleiner Gerichte rund um verschiedene Fleischsorten — das gesellige Essen.",tip:"Mezze ist für langsame, gesellige Mahlzeiten gedacht. Alles aufstellen und Zeit nehmen."},
+  f13:{name:"Frango Piri-Piri (Portugiesisches Grillhähnchen)",desc:"Das Gericht, das portugiesisches Hähnchen weltberühmt gemacht hat. Feurig, knoblauchig, unvergesslich.",tip:"Piri-Piri-Sauce wird nach einem Tag im Kühlschrank noch besser — die doppelte Menge machen und etwas zum Bestreichen aufheben."},
+  f14:{name:"Hähnchen-Korma",desc:"Reichhaltig, cremig und sanft gewürzt — das milde Curry, das jeden am Tisch überzeugt.",tip:"Gemahlene Cashewnüsse sind das traditionelle Bindemittel, das dem Korma seine seidige Textur verleiht."},
+  f15:{name:"Chicken Karahi",desc:"Pakistans beliebtes Wok-Hähnchencurry — tomatenreich, ingwerbetont, Restaurant-Stil zu Hause.",tip:"Ein echtes Karahi hat fast kein zugesetztes Wasser — Tomaten und Hähnchen erzeugen die gesamte Sauce."},
+  f16:{name:"Bosanski Pilav (Bosnischer Hähnchen-Pilaw)",desc:"Ein tröstliches Balkan-Reisgericht, Hähnchen und Reis langsam zusammen in einem Topf geschmort.",tip:"Widerstehe dem Drang, während des Reiskochens zu rühren — das ist das Geheimnis eines Pilaws, der nicht matschig wird."},
+  r13:{name:"Ćevapi mit Somun",desc:"Das ikonischste Street Food des Balkans — gegrillte Hackfleisch-Würstchen in weichem Fladenbrot.",tip:"Natron ist das Balkan-Geheimnis — es hält Ćevapi leicht und zart, niemals dicht."},
+  r14:{name:"Lamm-Seekh-Kebab",desc:"Gewürztes Lammhack, auf Spieße geformt und über Holzkohle gegrillt — ein pakistanisches BBQ-Muss.",tip:"Flache Spieße (nicht rund) verhindern, dass sich der Kebab auf dem Grill dreht und auseinanderfällt."},
+  r15:{name:"Lamm-Karahi",desc:"Lamm mit Knochen, schnell und heiß in einer Tomaten-Ingwer-Basis gekocht — tiefwürzig, Restaurant-Favorit.",tip:"Lamm mit Knochen verleiht dem Karahi seine Geschmackstiefe — wenn möglich nicht durch knochenloses ersetzen."},
+  r16:{name:"Espetada (Portugiesische Rinderspieße)",desc:"Madeiras berühmte knoblauchgespickte Rinderspieße, traditionell über offenem Feuer gegrillt.",tip:"Die Knoblauchstücke karamellisieren und werden süß — nicht auslassen, sondern essen."},
+  b13:{name:"Luxemburgisches Rindergulasch",desc:"Eine herzhafte luxemburgische Version des mitteleuropäischen Klassikers — reich, tief paprikahaltig, gemacht für kalte Abende.",tip:"Langsam und sanft ist hier nicht verhandelbar — überstürztes Schmoren ergibt zähes, trockenes Rindfleisch."},
+  b14:{name:"Rinder-Nihari",desc:"Der legendäre langsam gekochte pakistanische Eintopf, traditionell über Nacht für das Frühstück geköchelt. Tief, dunkel und unvergesslich.",tip:"Das Mehl vor dem Hinzufügen dunkelbraun zu rösten verleiht Nihari seine charakteristische dunkle Farbe und nussige Tiefe."},
+  b15:{name:"Chapli Kebab",desc:"Peshawars berühmte flache, knusprig-randige Hackfleischpatties, gespickt mit Granatapfelkernen und Koriander.",tip:"Tomate und Zwiebel sollten sehr fein gehackt sein, fast breiig — das hält die Patties innen zart."},
+  b16:{name:"Bife à Café (Portugiesisches Kaffee-Butter-Steak)",desc:"Ein Lissabonner Café-Klassiker — ein dünnes Steak in einer glänzenden Butter-Knoblauch-Kaffee-Sauce. Klingt seltsam, schmeckt unglaublich.",tip:"Den Kaffee nicht weglassen, weil man denkt, er schmeckt bitter — er mildert sich zu einer tiefen, herzhaften Basis für die Sauce."},
+  a11:{name:"Bosanski Lonac (Bosnischer Fleischtopf)",desc:"Bosniens nationales Eintopfgericht — Schichten aus Rind, Lamm und Gemüse, zusammen in einem Tontopf geschmort.",tip:"Die Magie des Lonac ist Geduld — dem Drang zu rühren widerstehen. Die Schichten garen von selbst ineinander."},
+  a12:{name:"Luxemburgische Gemischte Grillplatte",desc:"Eine großzügige Grillplatte im luxemburgischen Stil — einfache Würzung, hochwertiges Fleisch, klassischer Bistro-Komfort.",tip:"Die Grillzeiten zu staffeln bedeutet, dass alles zusammen fertig wird und ruht — das Hähnchen zuerst einplanen."},
+  a13:{name:"Pakistanische Gemischte Grillplatte",desc:"Seekh-Kebab, Hähnchen-Tikka und Lammkoteletts zusammen auf einer rauchigen, würzigen Platte — ein pakistanischer BBQ-Favorit.",tip:"Den Grill staffeln, damit alles zusammen heiß auf den Tisch kommt — Hähnchen und Seekh garen ähnlich schnell, Lamm etwas früher beginnen."},
+  a14:{name:"Indische Gemischte Tandoori-Grillplatte",desc:"Klassisches Tandoori-Hähnchen und Lammkoteletts, holzkohlegegrillt mit rauchiger Joghurt-Marinade — Restaurant-Tandoor-Geschmack zu Hause.",tip:"Die doppelte Marinade — zuerst Säure, dann Joghurt-Gewürze — ist die echte Tandoori-Technik und macht einen spürbaren Unterschied."},
   },
   lb:{
     f1:{name:"Gebakene ganze Poulet",desc:"De Sonndeg-Klassiker. Knusprig Haut, safteg Fleesch, onschlagbaren Arôme.",tip:"Kraider-Botter ënner d'Haut riebe virum Baken fir e Geschmaach vun der nächster Ebene."},
@@ -1893,6 +2090,22 @@ const RECIPE_META_T = {
     a8:{name:"Gemëschte Tandoori Teller",desc:"E komplette Tandoori Teller — Poulet a Lamm marinéiert, um Grill verbrannt.",tip:"Déi Joghurt-Marinade mécht zart AN schützt virun der intensiver Hëtzt."},
     a9:{name:"Portugisescht BBQ Teller",desc:"Piri-Piri Poulet, Rëndfleesch a Lammkoteletten — eng Feier op engem Brett.",tip:"Gudde Piri-Piri soll Iech e bëssen schwëtzen loossen — net zréckhalen mat de Chilis."},
     a10:{name:"Levantinescht Mezze Fest",desc:"E Sortiment vu klenge Geriichter ronderëm verschidde Fleeschzorten — déi geselleg Mahlzäit.",tip:"Mezze ass fir lues a geselleg Mohlzeiten designt. Alles opstellen a sech Zäit loossen."},
+  f13:{name:"Frango Piri-Piri (Portugisescht Grillhong)",desc:"D'Gerecht, dat portugisescht Hong weltberühmt gemaach huet. Feurege, mat Knuewel, onvergiesslech.",tip:"Piri-Piri Sauce gëtt no engem Dag am Frigo nach besser — d'duebel Quantitéit maachen an e bëssen fir ze bestrachen zerécklooss."},
+  f14:{name:"Poulet-Korma",desc:"Räich, cremeg a mëll gewürzt — de mëllen Curry deen jiddereen um Dësch iwwerzeegt.",tip:"Gemuelene Cashewnëss sinn dat traditionellt Bindmëttel, dat dem Korma seng seideg Textur gëtt."},
+  f15:{name:"Chicken Karahi",desc:"Pakistan säi beléift Wok-Poulet-Curry — domatenräich, mat vill Iwer, Restaurant-Stil doheem.",tip:"E richtege Karahi huet bal keen dobäigesat Waasser — d'Tomaten an d'Poulet maachen déi ganz Sauce."},
+  f16:{name:"Bosanski Pilav (Bosneschen Poulet-Pilaf)",desc:"E rouege Balkan Reis-Geriicht, Poulet a Reis zesumme lues gedämpft an engem Pott.",tip:"Widderstoen dem Drang ze réieren wärend de Reis kacht — dat ass de Geheimnis vun engem Pilaf deen net brei gëtt."},
+  r13:{name:"Ćevapi mat Somun",desc:"D'ikonesch Stroossefudder vum Balkan — gegrillte Hackfleesch-Wurschten an engem waarme Fladenbrout.",tip:"Bicarbonat ass de Balkan Geheimnis — et hält Ćevapi liicht a zaart, ni décht."},
+  r14:{name:"Lamm Seekh Kebab",desc:"Gewierztes Lammhack, op Spiéss geformt a gegrillt iwwer Kuel — e pakistanescht BBQ Muss.",tip:"Flaach Spiéss (net rond) verhënneren, datt de Kebab sech dréint an auserneen fällt op de Grill."},
+  r15:{name:"Lamm Karahi",desc:"Lamm mat Schuel séier a waarm gedämpft an enger Tomate-Iwer-Bas — déif geschmackvoll, Restaurant Favorit.",tip:"Lamm mat Schuel gëtt dem Karahi seng Geschmackstiefe — wann méiglech net duerch knochenlos ersetzen."},
+  r16:{name:"Espetada (Portugisesch Rëndsspiéss)",desc:"Madeira seng berühmt Knuewel-gespéckte Rëndsspiéss, traditionell iwwer op Feier gegrillt.",tip:"D'Knuewelstécker karamelliséieren a ginn séiss — net auslooss, iessen."},
+  b13:{name:"Lëtzebuerger Rëndsgoulasch",desc:"Eng häerzhaft Lëtzebuerger Versioun vum mëtteleuropäesche Klassiker — räich, déif Paprika, gemaach fir kal Owenden.",tip:"Lues a sanft ass hei net verhandelbar — Iwwerhaascht beim Schmueren gëtt zähe, dréchent Rëndfleesch."},
+  b14:{name:"Rëndfleesch Nihari",desc:"Deen legendäre lues gekachte pakistaneschen Eintopf, traditionell iwwer Nuecht fir de Frühstück gekacht. Déif, donkel an onvergiesslech.",tip:"D'Miel donkelbrong ze reesten ier et bäigesat gëtt gëtt dem Nihari seng charakteristesch donkel Faarf an nossäg Déift."},
+  b15:{name:"Chapli Kebab",desc:"Peshawar seng berühmt flaach, knusprech-rand Hackfleesch-Fricadellen, gefëllt mat Grenadinkären a Coriander.",tip:"Tomat an Ënnizwiebel sollen ganz fein gehackt sinn, bal breiig — dat hält d'Fricadellen zaart bannendran."},
+  b16:{name:"Bife à Café (Portugisescht Kaffi-Botter Steak)",desc:"E Lissabon Café Klassiker — e dënnt Steak an enger glänzender Botter-Knuewel-Kaffi Sauce. Kléngt komesch, schmaacht onheemlech.",tip:"Loosst de Kaffi net ewech well Dir denkt et schmaacht bitter — et gëtt mëll zu enger déiwer, häerzhafter Basis fir d'Sauce."},
+  a11:{name:"Bosanski Lonac (Bosneschen Fleeschpott)",desc:"Bosnien säin national Eintopf-Geriicht — Schichten aus Rëndfleesch, Lamm a Geméis zesumme an engem Toungpott gedämpft.",tip:"D'Magie vum Lonac ass Gedold — dem Drang ze réieren widderstoen. D'Schichten kachen sech vun eleng an-a-nee."},
+  a12:{name:"Lëtzebuerger Gemëschte Grillassiette",desc:"Eng generéis Lëtzebuerger-Stil Grillplack — einfach Wierzung, Qualitéitsfleesch, klassesche Bistro-Komfort.",tip:"D'Grillzäiten ze stafelen bedeit datt alles zesumme fäerdeg gëtt an ausrouht — de Poulet als éischt plangen."},
+  a13:{name:"Pakistanesch Gemëscht Grillplack",desc:"Seekh Kebab, Poulet Tikka a Lammkoteletten zesumme op enger rauchereger, gewierzter Plack — e pakistanesche BBQ Favorit.",tip:"De Grill stafelen esou datt alles zesumme waarm um Dësch ukënnt — Poulet a Seekh kachen ähnlech séier, Lamm e bëssen éischter ufänken."},
+  a14:{name:"Indesch Gemëscht Tandoori Grillplack",desc:"Klassescht Tandoori-Poulet a Lammkoteletten, mat Holzkuel gegrillt mat enger rauchereger Joghurt-Marinade — Restaurant Tandoor Goût doheem.",tip:"Déi duebel Marinad — éischt Aciditéit, dunn Joghurt-Gewierzer — ass déi richteg Tandoori Technik a mécht en oppfällege Ënnerscheed."},
   },
   bs:{
     f1:{name:"Pečena cijela piletina",desc:"Nedjeljna klasika. Hrskava koža, sočno meso, nenadmašna aroma.",tip:"Utrljajte maslac s biljem ispod kože prije pečenja za okus sljedeće razine."},
@@ -1941,6 +2154,22 @@ const RECIPE_META_T = {
     a8:{name:"Mješoviti tandoori tanjir",desc:"Kompletan tandoori tanjir — piletina i jagnjetina marinirani, zapečeni na roštilju.",tip:"Jogurtova marinada omekšava I štiti od intenzivne topline."},
     a9:{name:"Portugalni BBQ tanjir",desc:"Piri-piri piletina, govedina i jagnjeći kotleti — proslava na dasci.",tip:"Dobra piri-piri treba da vas malo znoji — ne štedite na čilijima."},
     a10:{name:"Levantinska mezze gozba",desc:"Asortiman malih jela oko raznih vrsta mesa — socijalni obrok.",tip:"Mezze je dizajniran za sporost i druženost. Rasporedite sve i uzmite vremena."},
+  f13:{name:"Frango Piri-Piri (Portugalska Piletina sa Roštilja)",desc:"Jelo koje je proslavilo portugalsku piletinu širom svijeta. Vatreno, sa puno bijelog luka, nezaboravno.",tip:"Piri-piri umak se poboljša nakon dana u frižideru — napravite duplo i sačuvajte malo za premazivanje."},
+  f14:{name:"Piletina Korma",desc:"Bogato, kremasto i blago začinjeno — blagi kari koji osvaja svakoga za stolom.",tip:"Mljeveni indijski oraščići su tradicionalno sredstvo za zgušnjavanje koje daje kormi svilenkastu teksturu."},
+  f15:{name:"Piletina Karahi",desc:"Pakistanski omiljeni pileći kari iz vok tave — bogat paradajzom, sa naglaskom na đumbir, restoranski stil kod kuće.",tip:"Pravi karahi ima jako malo dodane vode — paradajz i piletina prave cijeli sos."},
+  f16:{name:"Bosanski Pilav",desc:"Utješno balkansko jelo od riže, piletina i riža polako kuhani zajedno u jednom loncu.",tip:"Odolite iskušenju da mješate dok se riža kuha — to je tajna pilava koji nije kašast."},
+  r13:{name:"Ćevapi sa Somunom",desc:"Najpoznatija ulična hrana Balkana — pečeni ćevapi od mljevenog mesa u mekom somunu.",tip:"Soda bikarbona je balkanska tajna — održava ćevape lakim i mekim, nikad gustim."},
+  r14:{name:"Jagnjeći Seekh Kebab",desc:"Začinjena mljevena jagnjetina oblikovana na ražnjiće i pečena na drveni ugalj — pakistanski roštiljski must.",tip:"Ravni ražnjići (ne okrugli) sprečavaju kebab da se okreće i raspada na roštilju."},
+  r15:{name:"Jagnjeći Karahi",desc:"Jagnjetina sa kosti brzo i vruće kuhana u paradajz-đumbir osnovi — duboko ukusno, restoranski favorit.",tip:"Meso sa kosti daje karahiju dubinu ukusa — ne zamjenjujte mesom bez kosti ako je moguće."},
+  r16:{name:"Espetada",desc:"Čuveni ražnjići od govedine sa bijelim lukom sa Madeire, tradicionalno pečeni na otvorenoj vatri.",tip:"Komadi bijelog luka karameliziraju i omekšaju — ne izostavljajte ih, jedite ih."},
+  b13:{name:"Luksemburški Gulaš od Govedine",desc:"Srdačna luksemburška verzija srednjoevropskog klasika — bogata, duboko paprikasta, napravljena za hladne večeri.",tip:"Sporo i nježno je ovdje neizostavno — žurba sa dinstanjem daje žilavu, suhu govedinu."},
+  b14:{name:"Nihari od Govedine",desc:"Legendarni sporo kuhani pakistanski gulaš, tradicionalno kuhan preko noći za doručak. Dubok, taman i nezaboravan.",tip:"Prženje brašna do tamno smeđe boje prije dodavanja daje niháriju njegovu karakterističnu tamnu boju i orašastu dubinu."},
+  b15:{name:"Chapli Kebab",desc:"Čuveni pljosnati, hrskavih ivica pljeskavice od mljevene govedine iz Pešavara, pune sjemenki nara i korijandera.",tip:"Paradajz i luk trebaju biti veoma sitno isjeckani, skoro kao pire — to čuva pljeskavice mekim iznutra."},
+  b16:{name:"Bife à Café",desc:"Klasik lisabonskih kafića — tanak odrezak u sjajnom maslac-bijeli luk-kafa sosu. Zvuči čudno, ukus je nevjerovatan.",tip:"Ne izostavljajte kafu misleći da će biti gorka — ublažava se u dubok, ukusan temelj za sos."},
+  a11:{name:"Bosanski Lonac",desc:"Bosansko nacionalno jelo iz jednog lonca — slojevi govedine, jagnjetine i povrća polako kuhani zajedno u glinenom loncu.",tip:"Magija lonca je strpljenje — odolite iskušenju da mješate. Slojevi se kuhaju jedni u druge sami."},
+  a12:{name:"Luksemburški Mješani Roštilj Tanjir",desc:"Velikodušan roštilj tanjir u luksemburškom stilu — jednostavno začinjavanje, kvalitetno meso, klasična bistro udobnost.",tip:"Raspoređivanje vremena roštiljanja znači da sve završava i odmara zajedno — planirajte piletinu prvo."},
+  a13:{name:"Pakistanski Mješani Roštilj Tanjir",desc:"Seekh kebab, piletina tikka i jagnjeći kotleti zajedno na dimljenom, začinjenom tanjiru — pakistanski roštiljski favorit.",tip:"Rasporedite roštilj tako da sve stigne toplo na sto zajedno — piletina i seekh se kuhaju sličnom brzinom, počnite jagnjetinu malo ranije."},
+  a14:{name:"Indijski Mješani Tandoori Roštilj",desc:"Klasična tandoori piletina i jagnjeći kotleti, pečeni na drvenom uglju sa dimljenom marinadom od jogurta — restoranski tandoor ukus kod kuće.",tip:"Dupla marinada — prvo kiselina, zatim jogurt-začini — je prava tandoori tehnika i pravi primjetnu razliku."},
   },
   pt:{
     f1:{name:"Frango Assado Inteiro",desc:"O clássico de domingo. Pele crocante, carne suculenta, aroma imbatível.",tip:"Esfregue manteiga de ervas sob a pele antes de assar para um sabor de outro nível."},
@@ -1989,6 +2218,22 @@ const RECIPE_META_T = {
     a8:{name:"Travessa Tandoori Mista",desc:"Uma travessa tandoori completa — frango e borrego marinados, grelhados no carvão.",tip:"A marinada de iogurte amacia E protege do calor intenso."},
     a9:{name:"Travessa BBQ ao Estilo Português",desc:"Frango piri-piri, vaca grelhada e costeletas de borrego — uma celebração numa tábua.",tip:"Um bom piri-piri deve fazer suar um pouco — não segurar nas malaguetas."},
     a10:{name:"Festa Mezze Levantina",desc:"Uma variedade de pequenos pratos centrados em diferentes carnes — a refeição social.",tip:"O mezze é concebido para ser lento e social. Pôr tudo à mesa e levar o tempo necessário."},
+  f13:{name:"Frango Piri-Piri",desc:"O prato que tornou o frango português famoso no mundo inteiro. Picante, com alho, inesquecível.",tip:"O molho piri-piri melhora depois de um dia no frigorífico — faça o dobro e guarde um pouco para pincelar."},
+  f14:{name:"Korma de Frango",desc:"Rico, cremoso e suavemente picante — o caril suave que conquista toda a mesa.",tip:"Castanhas de caju moídas são o espessante tradicional que dá ao korma a sua textura sedosa."},
+  f15:{name:"Chicken Karahi",desc:"O amado caril de frango wok do Paquistão — rico em tomate, com gengibre marcante, estilo restaurante em casa.",tip:"Um karahi verdadeiro tem quase nenhuma água adicionada — os tomates e o frango criam todo o molho."},
+  f16:{name:"Bosanski Pilav (Pilaf de Frango da Bósnia)",desc:"Um reconfortante prato de arroz balcânico, frango e arroz cozinhados lentamente juntos numa só panela.",tip:"Resista à vontade de mexer enquanto o arroz cozinha — é o segredo de um pilaf que não fica papa."},
+  r13:{name:"Ćevapi com Somun",desc:"A comida de rua mais icónica dos Balcãs — salsichas de carne picada grelhadas em pão plano macio.",tip:"O bicarbonato de sódio é o segredo balcânico — mantém os ćevapi leves e tenros, nunca densos."},
+  r14:{name:"Kebab Seekh de Borrego",desc:"Borrego picado temperado moldado em espetos e grelhado em carvão — um essencial do churrasco paquistanês.",tip:"Espetos planos (não redondos) evitam que o kebab gire e se desfaça na grelha."},
+  r15:{name:"Lamb Karahi",desc:"Borrego com osso cozinhado rápido e quente numa base de tomate e gengibre — profundamente saboroso, favorito dos restaurantes.",tip:"O borrego com osso dá ao karahi a sua profundidade de sabor — não substituir por desossado se possível."},
+  r16:{name:"Espetada",desc:"Os famosos espetos de vaca com alho da Madeira, tradicionalmente grelhados em fogo aberto.",tip:"Os pedaços de alho caramelizam e amolecem — não os deixe de lado, coma-os."},
+  b13:{name:"Goulash de Vaca Luxemburguês",desc:"Uma versão luxemburguesa reconfortante do clássico da Europa Central — rico, profundamente apimentado com colorau, feito para noites frias.",tip:"Lento e suave é inegociável aqui — apressar o estufado dá carne dura e seca."},
+  b14:{name:"Nihari de Vaca",desc:"O lendário guisado paquistanês cozinhado lentamente, tradicionalmente deixado a noite toda para o pequeno-almoço. Profundo, escuro e inesquecível.",tip:"Torrar a farinha até ficar castanha escura antes de adicionar dá ao nihari a sua cor escura característica e profundidade amendoada."},
+  b15:{name:"Chapli Kebab",desc:"Os famosos hambúrgueres de carne picada, planos e crocantes nas bordas, de Peshawar, cheios de sementes de romã e coentros.",tip:"O tomate e a cebola devem ser cortados bem finamente, quase em puré — isso mantém os hambúrgueres tenros por dentro."},
+  b16:{name:"Bife à Café",desc:"Um clássico dos cafés de Lisboa — um bife fino num molho brilhante de manteiga, alho e café. Parece estranho, sabe incrível.",tip:"Não deixe o café de fora por achar que vai ficar amargo — suaviza-se numa base saborosa e profunda para o molho."},
+  a11:{name:"Bosanski Lonac (Panela de Carnes da Bósnia)",desc:"O prato nacional bósnio numa só panela — camadas de vaca, borrego e legumes cozinhados lentamente juntos numa panela de barro.",tip:"A magia do lonac é a paciência — resista à vontade de mexer. As camadas cozinham-se umas nas outras sozinhas."},
+  a12:{name:"Prato Misto Grelhado Luxemburguês",desc:"Um generoso prato grelhado ao estilo luxemburguês — tempero simples, carne de qualidade, conforto clássico de bistrô.",tip:"Escalonar os tempos de grelha significa que tudo fica pronto e repousa junto — planear o frango primeiro."},
+  a13:{name:"Prato Misto Grelhado Paquistanês",desc:"Kebab seekh, tikka de frango e costeletas de borrego juntos num prato fumado e picante — um favorito do churrasco paquistanês.",tip:"Escalone a grelha para que tudo chegue quente à mesa junto — frango e seekh cozinham a velocidades semelhantes, comece o borrego um pouco antes."},
+  a14:{name:"Grelhados Mistos Tandoori Indianos",desc:"Frango tandoori clássico e costeletas de borrego, grelhados no carvão com uma marinada fumada de iogurte — sabor de tandoor de restaurante em casa.",tip:"A marinada dupla — ácido primeiro, depois iogurte-especiarias — é a verdadeira técnica tandoori e faz uma diferença notável."},
   },
   ar:{
     f1:{name:"دجاج محمر كامل",desc:"الكلاسيكي الأحد. جلد مقرمش، لحم طري، رائحة لا تُقاوم.",tip:"افرك الزبدة العشبية تحت الجلد قبل الشوي للحصول على نكهة استثنائية."},
@@ -2037,6 +2282,22 @@ const RECIPE_META_T = {
     a8:{name:"طبق تندوري مشكّل",desc:"طبق تندوري كامل — دجاج وضأن متبّلان، مشويان على الفحم.",tip:"مارينيد الزبادي يُطرّي ويحمي من الحرارة الشديدة في آنٍ واحد."},
     a9:{name:"طبق شواء بالأسلوب البرتغالي",desc:"دجاج بيري بيري، لحم بقري وقطع ضأن مشوية — احتفال على لوح تقديم.",tip:"البيري بيري الجيد يجب أن يجعلك تتعرق قليلاً — لا تبخل على الفلفل الحار."},
     a10:{name:"وليمة مزة شامية",desc:"مجموعة من الأطباق الصغيرة المحيطة بأنواع مختلفة من اللحوم — الوجبة الاجتماعية.",tip:"المزة مصممة لتكون بطيئة واجتماعية. ضع كل شيء على الطاولة وخذ وقتك."},
+  f13:{name:"فراخ بيري بيري (الدجاج المشوي البرتغالي)",desc:"الطبق الذي جعل الدجاج البرتغالي مشهوراً عالمياً. حار، بالثوم، لا يُنسى.",tip:"تتحسن صلصة البيري بيري بعد يوم في الثلاجة — اصنع كمية مضاعفة واحتفظ ببعضها للدهن."},
+  f14:{name:"دجاج كورما",desc:"غني وكريمي ومتبل بلطف — كاري خفيف يفوز بإعجاب الجميع على المائدة.",tip:"الكاجو المطحون هو المكثف التقليدي الذي يمنح الكورما قوامه الحريري."},
+  f15:{name:"دجاج كراهي",desc:"طبق الدجاج الباكستاني المحبوب المطهو في المقلاة — غني بالطماطم، بنكهة الزنجبيل القوية، بطعم المطعم في المنزل.",tip:"الكراهي الحقيقي لا يحتوي على ماء مضاف تقريباً — الطماطم والدجاج يصنعان الصلصة كاملة."},
+  f16:{name:"بوسانسكي بيلاف (أرز الدجاج البوسني)",desc:"طبق أرز بلقاني مريح، الدجاج والأرز يُطهيان معاً ببطء في قدر واحد.",tip:"قاوم رغبة التحريك أثناء طهي الأرز — هذا هو سر البيلاف غير المتكتل."},
+  r13:{name:"تشيفابي مع صومون",desc:"أشهر أطعمة الشارع في البلقان — نقانق اللحم المفروم المشوية في خبز مسطح طري.",tip:"صودا الخبز هي سر البلقان — تحافظ على قوام تشيفابي خفيف وطري، لا يكون كثيفاً أبداً."},
+  r14:{name:"سيخ كباب لحم الخروف",desc:"لحم خروف مفروم متبل يُشكّل على أسياخ ويُشوى على الفحم — طبق أساسي في الشواء الباكستاني.",tip:"الأسياخ المسطحة (وليست المستديرة) تمنع الكباب من الدوران والتفكك على الشواية."},
+  r15:{name:"كراهي لحم الخروف",desc:"لحم خروف بالعظم يُطهى بسرعة وعلى نار قوية في قاعدة من الطماطم والزنجبيل — لذيذ جداً، طبق مفضل في المطاعم.",tip:"اللحم بالعظم يمنح الكراهي عمق نكهته — لا تستبدله بلحم منزوع العظم إن أمكن."},
+  r16:{name:"إسبيتادا (أسياخ اللحم البقري البرتغالية)",desc:"أسياخ لحم البقر الشهيرة بالثوم من ماديرا، تُشوى تقليدياً على نار مفتوحة.",tip:"قطع الثوم تتكرمل وتصبح طرية وحلوة — لا تتجاهلها، كلها."},
+  b13:{name:"جولاش اللحم البقري اللوكسمبورغي",desc:"نسخة لوكسمبورغية دافئة من الطبق الأوروبي الوسطي الكلاسيكي — غني، بنكهة البابريكا العميقة، مثالي لليالي الباردة.",tip:"الطهي البطيء والهادئ غير قابل للتفاوض هنا — التسرع في الطهي ينتج لحماً جافاً وقاسياً."},
+  b14:{name:"نهاري لحم بقري",desc:"طبق الحساء الباكستاني الأسطوري المطهو ببطء، يُترك تقليدياً طوال الليل لوجبة الإفطار. عميق، داكن، لا يُنسى.",tip:"تحميص الدقيق حتى يصبح بنياً داكناً قبل إضافته يمنح النهاري لونه الداكن المميز وعمقه الجوزي."},
+  b15:{name:"تشابلي كباب",desc:"أقراص اللحم البقري المفروم الشهيرة من بيشاور، مسطحة ومقرمشة الحواف، مليئة ببذور الرمان والكزبرة.",tip:"يجب تقطيع الطماطم والبصل ناعماً جداً، تقريباً كالهريس — هذا يحافظ على طراوة الأقراص من الداخل."},
+  b16:{name:"بيفي آ كافيه (ستيك القهوة والزبدة البرتغالي)",desc:"طبق كلاسيكي من مقاهي لشبونة — شريحة لحم رفيعة في صلصة لامعة من الزبدة والثوم والقهوة. يبدو غريباً، لكن طعمه رائع.",tip:"لا تتجنب القهوة ظناً أن طعمها سيكون مراً — تتحول إلى قاعدة عميقة ولذيذة للصلصة."},
+  a11:{name:"بوسانسكي لوناتس (قدر اللحوم البوسني)",desc:"الطبق الوطني البوسني في قدر واحد — طبقات من لحم البقر والخروف والخضار تُطهى معاً ببطء في قدر من الطين.",tip:"سحر اللوناتس هو الصبر — قاوم رغبة التحريك. الطبقات تطهو بعضها في بعض من تلقاء نفسها."},
+  a12:{name:"طبق الشواء المشكل اللوكسمبورغي",desc:"طبق شواء سخي على الطراز اللوكسمبورغي — تتبيل بسيط، لحم عالي الجودة، راحة البيسترو الكلاسيكية.",tip:"تدريج أوقات الشوي يعني أن كل شيء ينتهي ويرتاح معاً — خطط للدجاج أولاً."},
+  a13:{name:"طبق الشواء المشكل الباكستاني",desc:"سيخ كباب وتكة الدجاج وقطع لحم الخروف معاً في طبق مدخّن ومتبل — طبق مفضل في الشواء الباكستاني.",tip:"درّج أوقات الشواء ليصل كل شيء ساخناً إلى المائدة معاً — الدجاج والسيخ يُطهيان بسرعة متقاربة، ابدأ بالخروف قليلاً قبلهما."},
+  a14:{name:"شواء تندوري هندي مشكل",desc:"دجاج التندوري الكلاسيكي وقطع لحم الخروف، مشوية على الفحم مع تتبيلة زبادي مدخنة — نكهة مطعم التندوري في المنزل.",tip:"التتبيلة المزدوجة — الحمض أولاً، ثم الزبادي والتوابل — هي تقنية التندوري الحقيقية وتحدث فرقاً ملحوظاً."},
   },
 };
 
@@ -2074,105 +2335,105 @@ const T = {
   en:{
     nav:{home:"Home",boxes:"Boxes",alacarte:"À la Carte",dash:"Dashboard",cart:"Cart",login:"Sign in",logout:"Sign out"},
     hero:{badge:"Fresh Meat · Delivered Weekly · Luxembourg",h1:"Fresh meat.",h2:"Your doorstep.",sub:"Premium cuts, hand-selected, delivered every week. From farm to your fridge — as fresh as it gets.",cta:"Shop Boxes",ctaB:"À la Carte"},
-    stats:[["Never frozen.","Always premium. Always fresh."],["46 recipes","Included. Cook something epic."],["6 days a week","Morning or afternoon. Your call."],["From €39/week","Premium halal cuts. Your door. Every week."]],
+    stats:[["Never frozen.","Always premium. Always fresh."],["62 recipes","Included. Cook something epic."],["6 days a week","Morning or afternoon. Your call."],["From €39/week","Premium halal cuts. Your door. Every week."]],
     boxes:{title:"Choose your box.",sub:"Pick your tier, pick your protein.",tierLabel:"Your tier",subscribe:"Subscribe weekly",weekly:"/wk",once:"One-time order",popular:"Most popular",contents:"What's inside",perKg:"/kg",deliveryNote:"Free delivery on Beast Max & Ultra · €8 on Lite & À la Carte under €70"},
     schedule:{title:"Schedule it.",day:"Delivery day",time:"Time slot",days:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],times:[{key:"morning",label:"Morning",note:"7:00 – 12:00"},{key:"afternoon",label:"Afternoon",note:"12:00 – 18:00"}]},
-    ac:{title:"À la Carte",sub:"Individual cuts, no commitment.",cats:["All","Poultry","Beef","Lamb"],add:"Add",items:[{id:1,name:"Chicken Breast",cat:"Poultry",w:"500g",p:12.00,note:"Free-range halal"},{id:2,name:"Chicken Legs",cat:"Poultry",w:"600g",p:8.50,note:"Bone-in"},{id:3,name:"Whole Chicken",cat:"Poultry",w:"1.5kg",p:19.50,note:"Oven-ready"},{id:5,name:"Beef Sirloin",cat:"Beef",w:"400g",p:22.00,note:"28-day dry-aged"},{id:6,name:"Ribeye Steak",cat:"Beef",w:"350g",p:29.00,note:"Prime marbled"},{id:7,name:"Minced Beef",cat:"Beef",w:"500g",p:12.00,note:"Fresh ground"},{id:8,name:"Beef Tenderloin",cat:"Beef",w:"300g",p:29.00,note:"Most tender cut"},{id:9,name:"Lamb Rack",cat:"Lamb",w:"600g",p:36.00,note:"French-trimmed"},{id:10,name:"Lamb Shoulder",cat:"Lamb",w:"1kg",p:27.00,note:"Bone-in"},{id:11,name:"Lamb Chops",cat:"Lamb",w:"500g",p:29.00,note:"Loin chops"}]},
+    ac:{title:"À la Carte",sub:"Individual cuts, no commitment.",cats:["All","Poultry","Beef","Veal","Lamb"],add:"Add"},
     cart:{title:"Your cart",empty:"Cart is empty",emptyNote:"Pick a box to get started.",sub:"Subtotal",del:"Delivery",free:"Free",total:"Total",checkout:"Checkout",remove:"Remove",subTag:"Weekly",oneTag:"One-time",loginRequired:"Sign in to checkout",freeNote:"🎉 Free delivery applied!"},
     auth:{signinTitle:"Welcome back.",signupTitle:"Create account.",email:"Email address",password:"Password",name:"Full name",signin:"Sign in",signup:"Create account",switchSignup:"No account? Sign up",switchSignin:"Have an account? Sign in",demo:"Try demo account",demoNote:"demo@meatbeast.lu / demo1234",error:"Invalid email or password.",errorExists:"Account already exists.",secure:"Your data is encrypted and secure."},
     co:{title:"Checkout",fname:"First name",lname:"Last name",email:"Email",phone:"Phone",addr:"Street address",city:"City",zip:"Postal code",pay:"Payment",card:"Card number",exp:"MM / YY",cvv:"CVV",place:"Place order",note:"Weekly subscription — pause or cancel anytime.",ok:"You're in. 🥩",okNote:"Order confirmed. Your first delivery is scheduled for next week.",secure:"256-bit SSL encryption"},
     dash:{title:"Dashboard",welcome:"Welcome back",subStatus:"Subscription",nextDel:"Next delivery",upcoming:"Upcoming",history:"Order history",status:{active:"Active",paused:"Paused",cancelled:"Cancelled",scheduled:"Scheduled",delivered:"Delivered"},pause:"Pause",resume:"Resume",cancel:"Cancel subscription",change:"Change box",pauseNote:"Skip up to 8 weeks.",cancelNote:"No fees.",confirmCancel:"Stop all deliveries?",yes:"Yes, cancel",keep:"Keep it",noSub:"No active subscription",noSubNote:"Subscribe to a box to manage it here.",browse:"Browse boxes"},
-    home:{boxesTitle:"The boxes.",boxesSub:"Four proteins. Three sizes. Every week.",seeAll:"See all boxes →",fromTier:"from Beast Lite",recipeLabel:"Included with every box",recipeTitle1:"Not just meat.",recipeTitle2:"Inspiration too.",recipeSub:"Curated recipes across 5 world cuisines, included free with every box.",browseAll:"Browse all 46 recipes →",recipesCount:"40+ recipes total",ctaTitle:"Farm fresh.",ctaSub:"Every single week.",ctaBody:"Hand-picked cuts, cold-chain delivered. As fresh as a trip to the butcher — without the trip.",ctaBtn:"Start this week →",cookNow:"View recipe →",showingCount:"Showing",recipes:"recipes"},
+    home:{boxesTitle:"The boxes.",boxesSub:"Four proteins. Three sizes. Every week.",seeAll:"See all boxes →",fromTier:"from Beast Lite",recipeLabel:"Included with every box",recipeTitle1:"Not just meat.",recipeTitle2:"Inspiration too.",recipeSub:"Curated recipes across 10 world cuisines, included free with every box.",browseAll:"Browse all 60+ recipes →",recipesCount:"62 recipes total",ctaTitle:"Farm fresh.",ctaSub:"Every single week.",ctaBody:"Hand-picked cuts, cold-chain delivered. As fresh as a trip to the butcher — without the trip.",ctaBtn:"Start this week →",cookNow:"View recipe →",showingCount:"Showing",recipes:"recipes"},
     cuisines:["All Recipes","Classic","BBQ","Arabic","Indian","Asian"],
     footer:{note:"Fresh meat, weekly. Luxembourg.",halal:"Halal Certified",links:["FAQ","Delivery","Contact","Privacy"],faqItems:["How does the subscription work?","Can I skip a week?","What is your cancellation policy?","How is the meat packaged?","Is all meat halal certified?"],deliveryItems:["Free delivery on Beast Max & Ultra boxes","€8 delivery fee on Lite & À la Carte orders","Your first box: always free delivery","Delivery 6 days a week","Morning (7–12) or Afternoon (12–18)"],contactItems:["info@meatbeast.lu","Luxembourg City area","+352 691 000 000","Mon–Sat 8:00–18:00","Instagram · Facebook"],privacyItems:["We never sell your data","Payment secured by Stripe","GDPR compliant","Data stored in EU","Cookie preferences"]},
   },
   fr:{
     nav:{home:"Accueil",boxes:"Boxes",alacarte:"À la Carte",dash:"Tableau de bord",cart:"Panier",login:"Connexion",logout:"Déconnexion"},
     hero:{badge:"Viande Fraîche · Livraison Hebdo · Luxembourg",h1:"Viande fraîche.",h2:"À votre porte.",sub:"Des morceaux premium, livrés chaque semaine. De la ferme à votre réfrigérateur.",cta:"Voir les Boxes",ctaB:"À la Carte"},
-    stats:[["Jamais congelé.","Toujours premium. Toujours frais."],["46 recettes","Incluses. Cuisinez quelque chose d'épique."],["6 jours/semaine","Matin ou après-midi. Vous décidez."],["Dès 39€/sem.","Coupes halal premium. Votre porte. Chaque semaine."]],
+    stats:[["Jamais congelé.","Toujours premium. Toujours frais."],["62 recettes","Incluses. Cuisinez quelque chose d'épique."],["6 jours/semaine","Matin ou après-midi. Vous décidez."],["Dès 39€/sem.","Coupes halal premium. Votre porte. Chaque semaine."]],
     boxes:{title:"Choisissez votre box.",sub:"Choisissez votre format et votre protéine.",tierLabel:"Votre format",subscribe:"Abonnement hebdo",weekly:"/sem",once:"Commande unique",popular:"Plus populaire",contents:"Contenu",perKg:"/kg",deliveryNote:"Livraison gratuite Beast Max & Ultra · 8€ sur Lite & À la Carte sous 70€"},
     schedule:{title:"Planifiez.",day:"Jour de livraison",time:"Créneau",days:["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],times:[{key:"morning",label:"Matin",note:"7h – 12h"},{key:"afternoon",label:"Après-midi",note:"12h – 18h"}]},
-    ac:{title:"À la Carte",sub:"Morceaux individuels, sans engagement.",cats:["Tout","Volaille","Bœuf","Agneau"],add:"Ajouter",items:[{id:1,name:"Blanc de Poulet",cat:"Volaille",w:"500g",p:12.00,note:"Plein air halal"},{id:2,name:"Cuisses de Poulet",cat:"Volaille",w:"600g",p:8.50,note:"Os"},{id:3,name:"Poulet Entier",cat:"Volaille",w:"1.5kg",p:19.50,note:"Prêt à rôtir"},{id:5,name:"Faux-filet",cat:"Bœuf",w:"400g",p:22.00,note:"Affiné 28j"},{id:6,name:"Entrecôte",cat:"Bœuf",w:"350g",p:29.00,note:"Persillée"},{id:7,name:"Bœuf Haché",cat:"Bœuf",w:"500g",p:12.00,note:"Frais"},{id:8,name:"Filet de Bœuf",cat:"Bœuf",w:"300g",p:29.00,note:"Tendre"},{id:9,name:"Carré d'Agneau",cat:"Agneau",w:"600g",p:36.00,note:"Manchonné"},{id:10,name:"Épaule d'Agneau",cat:"Agneau",w:"1kg",p:27.00,note:"Os"},{id:11,name:"Côtelettes d'Agneau",cat:"Agneau",w:"500g",p:29.00,note:"Longe"}]},
+    ac:{title:"À la Carte",sub:"Morceaux individuels, sans engagement.",cats:["Tout","Volaille","Bœuf","Veau","Agneau"],add:"Ajouter"},
     cart:{title:"Votre panier",empty:"Panier vide",emptyNote:"Choisissez une box pour commencer.",sub:"Sous-total",del:"Livraison",free:"Gratuite",total:"Total",checkout:"Commander",remove:"Supprimer",subTag:"Hebdo",oneTag:"Unique",loginRequired:"Connectez-vous pour commander",freeNote:"🎉 Livraison gratuite appliquée !"},
     auth:{signinTitle:"Bon retour.",signupTitle:"Créer un compte.",email:"Adresse e-mail",password:"Mot de passe",name:"Nom complet",signin:"Connexion",signup:"Créer un compte",switchSignup:"Pas de compte ? S'inscrire",switchSignin:"Déjà inscrit ? Se connecter",demo:"Compte démo",demoNote:"demo@meatbeast.lu / demo1234",error:"Email ou mot de passe incorrect.",errorExists:"Ce compte existe déjà.",secure:"Vos données sont chiffrées."},
     co:{title:"Commander",fname:"Prénom",lname:"Nom",email:"E-mail",phone:"Téléphone",addr:"Adresse",city:"Ville",zip:"Code postal",pay:"Paiement",card:"Numéro de carte",exp:"MM / AA",cvv:"CVV",place:"Confirmer",note:"Abonnement hebdo — pause ou annulation à tout moment.",ok:"C'est parti. 🥩",okNote:"Commande confirmée. Première livraison la semaine prochaine.",secure:"Chiffrement SSL 256 bits"},
     dash:{title:"Tableau de bord",welcome:"Bon retour",subStatus:"Abonnement",nextDel:"Prochaine livraison",upcoming:"À venir",history:"Historique",status:{active:"Actif",paused:"En pause",cancelled:"Annulé",scheduled:"Planifiée",delivered:"Livrée"},pause:"Mettre en pause",resume:"Reprendre",cancel:"Annuler",change:"Changer de box",pauseNote:"Jusqu'à 8 semaines.",cancelNote:"Sans frais.",confirmCancel:"Arrêter toutes les livraisons ?",yes:"Oui, annuler",keep:"Garder",noSub:"Aucun abonnement",noSubNote:"Abonnez-vous à une box.",browse:"Voir les boxes"},
-    home:{boxesTitle:"Les boxes.",boxesSub:"Quatre protéines. Trois tailles. Chaque semaine.",seeAll:"Voir toutes les boxes →",fromTier:"à partir de Beast Lite",recipeLabel:"Inclus dans chaque box",recipeTitle1:"Pas que de la viande.",recipeTitle2:"L'inspiration aussi.",recipeSub:"Des recettes soigneusement choisies dans 5 cuisines du monde, incluses gratuitement.",browseAll:"Parcourir les 46 recettes →",recipesCount:"40+ recettes incluses",ctaTitle:"Fraîcheur de ferme.",ctaSub:"Chaque semaine, sans exception.",ctaBody:"Des morceaux triés sur le volet, livrés en chaîne du froid. Aussi frais qu'une visite chez le boucher — sans le déplacement.",ctaBtn:"Commencer cette semaine →",cookNow:"Voir la recette →",showingCount:"Résultats",recipes:"recettes"},
+    home:{boxesTitle:"Les boxes.",boxesSub:"Quatre protéines. Trois tailles. Chaque semaine.",seeAll:"Voir toutes les boxes →",fromTier:"à partir de Beast Lite",recipeLabel:"Inclus dans chaque box",recipeTitle1:"Pas que de la viande.",recipeTitle2:"L'inspiration aussi.",recipeSub:"Des recettes soigneusement choisies dans 10 cuisines du monde, incluses gratuitement.",browseAll:"Parcourir les 60+ recettes →",recipesCount:"62 recettes incluses",ctaTitle:"Fraîcheur de ferme.",ctaSub:"Chaque semaine, sans exception.",ctaBody:"Des morceaux triés sur le volet, livrés en chaîne du froid. Aussi frais qu'une visite chez le boucher — sans le déplacement.",ctaBtn:"Commencer cette semaine →",cookNow:"Voir la recette →",showingCount:"Résultats",recipes:"recettes"},
     cuisines:["Toutes les recettes","Classique","BBQ","Arabe","Indien","Asiatique"],
     footer:{note:"Viande fraîche, chaque semaine. Luxembourg.",halal:"Halal Certifié",links:["FAQ","Livraison","Contact","Confidentialité"],faqItems:["Comment fonctionne l'abonnement ?","Puis-je sauter une semaine ?","Quelle est votre politique d'annulation ?","Comment la viande est-elle emballée ?","Toute la viande est-elle halal ?"],deliveryItems:["Livraison gratuite sur Beast Max & Ultra","8€ sur commandes Lite & À la Carte","Première box : livraison toujours gratuite","Livraison 6 jours par semaine","Matin (7h–12h) ou Après-midi (12h–18h)"],contactItems:["info@meatbeast.lu","Ville de Luxembourg","+352 691 000 000","Lun–Sam 8h–18h","Instagram · Facebook"],privacyItems:["Nous ne vendons jamais vos données","Paiement sécurisé par Stripe","Conforme au RGPD","Données stockées dans l'UE","Préférences cookies"]},
   },
   de:{
     nav:{home:"Start",boxes:"Boxen",alacarte:"À la Carte",dash:"Dashboard",cart:"Warenkorb",login:"Anmelden",logout:"Abmelden"},
     hero:{badge:"Frisches Fleisch · Wöchentlich · Luxemburg",h1:"Frisches Fleisch.",h2:"Direkt zu dir.",sub:"Premium-Cuts, handverlesen, wöchentlich geliefert. Vom Betrieb direkt in deinen Kühlschrank.",cta:"Boxen ansehen",ctaB:"À la Carte"},
-    stats:[["Nie gefroren.","Immer premium. Immer frisch."],["46 Rezepte","Inklusive. Koch etwas Episches."],["6 Tage/Woche","Morgens oder nachmittags. Du entscheidest."],["Ab 39€/Woche","Premium Halal-Cuts. Deine Tür. Jede Woche."]],
+    stats:[["Nie gefroren.","Immer premium. Immer frisch."],["62 Rezepte","Inklusive. Koch etwas Episches."],["6 Tage/Woche","Morgens oder nachmittags. Du entscheidest."],["Ab 39€/Woche","Premium Halal-Cuts. Deine Tür. Jede Woche."]],
     boxes:{title:"Wähle deine Box.",sub:"Wähle dein Format und dein Protein.",tierLabel:"Dein Format",subscribe:"Wöchentlich abonnieren",weekly:"/Wo",once:"Einmalig bestellen",popular:"Beliebteste",contents:"Inhalt",perKg:"/kg",deliveryNote:"Kostenlose Lieferung für Beast Max & Ultra · 8€ für Lite & À la Carte unter 70€"},
     schedule:{title:"Termin wählen.",day:"Liefertag",time:"Zeitfenster",days:["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"],times:[{key:"morning",label:"Morgens",note:"7:00 – 12:00"},{key:"afternoon",label:"Nachmittags",note:"12:00 – 18:00"}]},
-    ac:{title:"À la Carte",sub:"Einzelne Cuts, kein Abo.",cats:["Alle","Geflügel","Rind","Lamm"],add:"Hinzufügen",items:[{id:1,name:"Hähnchenbrust",cat:"Geflügel",w:"500g",p:12.00,note:"Freiland Halal"},{id:2,name:"Hähnchenkeulen",cat:"Geflügel",w:"600g",p:8.50,note:"Knochen"},{id:3,name:"Ganzes Hähnchen",cat:"Geflügel",w:"1.5kg",p:19.50,note:"Ofenfertig"},{id:5,name:"Rindersirloin",cat:"Rind",w:"400g",p:22.00,note:"28 Tage gereift"},{id:6,name:"Ribeye-Steak",cat:"Rind",w:"350g",p:29.00,note:"Marmoriert"},{id:7,name:"Rinderhack",cat:"Rind",w:"500g",p:12.00,note:"Frisch"},{id:8,name:"Rinderfilet",cat:"Rind",w:"300g",p:29.00,note:"Zart"},{id:9,name:"Lammkarree",cat:"Lamm",w:"600g",p:36.00,note:"Französ."},{id:10,name:"Lammschulter",cat:"Lamm",w:"1kg",p:27.00,note:"Knochen"},{id:11,name:"Lammkoteletts",cat:"Lamm",w:"500g",p:29.00,note:"Longe"}]},
+    ac:{title:"À la Carte",sub:"Einzelne Cuts, kein Abo.",cats:["Alle","Geflügel","Rind","Kalb","Lamm"],add:"Hinzufügen"},
     cart:{title:"Warenkorb",empty:"Noch leer",emptyNote:"Box auswählen und loslegen.",sub:"Zwischensumme",del:"Lieferung",free:"Kostenlos",total:"Gesamt",checkout:"Zur Kasse",remove:"Entfernen",subTag:"Wöchentlich",oneTag:"Einmalig",loginRequired:"Anmelden zum Bestellen",freeNote:"🎉 Kostenlose Lieferung!"},
     auth:{signinTitle:"Willkommen zurück.",signupTitle:"Konto erstellen.",email:"E-Mail",password:"Passwort",name:"Vollständiger Name",signin:"Anmelden",signup:"Konto erstellen",switchSignup:"Kein Konto? Registrieren",switchSignin:"Schon angemeldet? Einloggen",demo:"Demo-Konto",demoNote:"demo@meatbeast.lu / demo1234",error:"Falsche E-Mail oder Passwort.",errorExists:"Konto existiert bereits.",secure:"Ihre Daten sind sicher verschlüsselt."},
     co:{title:"Bestellung",fname:"Vorname",lname:"Nachname",email:"E-Mail",phone:"Telefon",addr:"Straße",city:"Stadt",zip:"PLZ",pay:"Zahlung",card:"Kartennummer",exp:"MM / JJ",cvv:"CVV",place:"Bestellen",note:"Wöchentliches Abo — jederzeit pausierbar.",ok:"Bestätigt. 🥩",okNote:"Erste Lieferung nächste Woche.",secure:"256-Bit-SSL-Verschlüsselung"},
     dash:{title:"Dashboard",welcome:"Willkommen zurück",subStatus:"Abonnement",nextDel:"Nächste Lieferung",upcoming:"Geplant",history:"Bestellhistorie",status:{active:"Aktiv",paused:"Pausiert",cancelled:"Gekündigt",scheduled:"Geplant",delivered:"Geliefert"},pause:"Pausieren",resume:"Fortsetzen",cancel:"Kündigen",change:"Box wechseln",pauseNote:"Bis 8 Wochen.",cancelNote:"Keine Gebühren.",confirmCancel:"Alle Lieferungen stoppen?",yes:"Ja, kündigen",keep:"Behalten",noSub:"Kein aktives Abo",noSubNote:"Box abonnieren.",browse:"Boxen ansehen"},
-    home:{boxesTitle:"Die Boxen.",boxesSub:"Vier Proteine. Drei Größen. Jede Woche.",seeAll:"Alle Boxen ansehen →",fromTier:"ab Beast Lite",recipeLabel:"Jeder Box beigelegt",recipeTitle1:"Nicht nur Fleisch.",recipeTitle2:"Auch Inspiration.",recipeSub:"Ausgewählte Rezepte aus 5 Weltkuchen, kostenlos jeder Box beigelegt.",browseAll:"Alle 46 Rezepte entdecken →",recipesCount:"40+ Rezepte dabei",ctaTitle:"Frisch vom Hof.",ctaSub:"Jede Woche. Ohne Ausnahme.",ctaBody:"Handverlesene Cuts, Kühlkettenlieferung. So frisch wie ein Besuch beim Metzger — ohne den Weg.",ctaBtn:"Diese Woche starten →",cookNow:"Rezept ansehen →",showingCount:"Ergebnisse",recipes:"Rezepte"},
+    home:{boxesTitle:"Die Boxen.",boxesSub:"Vier Proteine. Drei Größen. Jede Woche.",seeAll:"Alle Boxen ansehen →",fromTier:"ab Beast Lite",recipeLabel:"Jeder Box beigelegt",recipeTitle1:"Nicht nur Fleisch.",recipeTitle2:"Auch Inspiration.",recipeSub:"Ausgewählte Rezepte aus 10 Weltküchen, kostenlos jeder Box beigelegt.",browseAll:"Alle 60+ Rezepte entdecken →",recipesCount:"62 Rezepte dabei",ctaTitle:"Frisch vom Hof.",ctaSub:"Jede Woche. Ohne Ausnahme.",ctaBody:"Handverlesene Cuts, Kühlkettenlieferung. So frisch wie ein Besuch beim Metzger — ohne den Weg.",ctaBtn:"Diese Woche starten →",cookNow:"Rezept ansehen →",showingCount:"Ergebnisse",recipes:"Rezepte"},
     cuisines:["Alle Rezepte","Klassisch","BBQ","Arabisch","Indisch","Asiatisch"],
     footer:{note:"Frisches Fleisch, wöchentlich. Luxemburg.",halal:"Halal Zertifiziert",links:["FAQ","Lieferung","Kontakt","Datenschutz"],faqItems:["Wie funktioniert das Abonnement?","Kann ich eine Woche überspringen?","Wie ist Ihre Kündigungsrichtlinie?","Wie wird das Fleisch verpackt?","Ist alles Fleisch halal?"],deliveryItems:["Kostenlose Lieferung für Beast Max & Ultra","8€ für Lite & À la Carte Bestellungen","Erste Box: immer kostenlose Lieferung","Lieferung 6 Tage pro Woche","Morgens (7–12) oder Nachmittags (12–18)"],contactItems:["info@meatbeast.lu","Luxemburg-Stadt","+352 691 000 000","Mo–Sa 8:00–18:00","Instagram · Facebook"],privacyItems:["Wir verkaufen Ihre Daten nie","Zahlung gesichert durch Stripe","DSGVO-konform","Daten in der EU gespeichert","Cookie-Einstellungen"]},
   },
   lb:{
     nav:{home:"Heem",boxes:"Boxen",alacarte:"À la Carte",dash:"Mäi Kont",cart:"Korf",login:"Aloggen",logout:"Ausloggen"},
     hero:{badge:"Frësch Fleesch · Wëchentlech Geliwwert · Lëtzebuerg",h1:"Frësch Fleesch.",h2:"Un Är Dier.",sub:"Premium Stécker, mat der Hand ausgewielt, all Woch geliwwert. Vum Bauerenhaff bis an Äre Frigo — sou frësch wéi et geet.",cta:"Boxen entdecken",ctaB:"À la Carte"},
-    stats:[["Ni gefruer.","Ëmmer premium. Ëmmer frësch."],["46 Recetten","Dobäi. Kacht eppes Epickt."],["6 Deeg d'Woch","Moies oder Nomëtteg. Dir entscheed."],["Ab €39/Woch","Premium Halal Fleesch. Är Dier. All Woch."]],
+    stats:[["Ni gefruer.","Ëmmer premium. Ëmmer frësch."],["62 Recetten","Dobäi. Kacht eppes Epickt."],["6 Deeg d'Woch","Moies oder Nomëtteg. Dir entscheed."],["Ab €39/Woch","Premium Halal Fleesch. Är Dier. All Woch."]],
     boxes:{title:"D'Boxen.",sub:"Véier Proteinen. Dräi Gréissten. All Woch.",tierLabel:"Är Gréisst",subscribe:"Wëchentlech abonanéieren",weekly:"/Woch",once:"Eemol bestellen",popular:"Beléifste",contents:"Wat ass dran",perKg:"/kg",deliveryNote:"Gratis Liwwerung mat Max & Ultra · 8€ mat Lite & À la Carte"},
     schedule:{title:"Zäit wielen.",day:"Liwwerdag",time:"Zäitfenster",days:["Méindeg","Dënschdeg","Mëttwoch","Donneschdeg","Freideg","Samschdeg"],times:[{key:"morning",label:"Moies",note:"7:00 – 12:00"},{key:"afternoon",label:"Nomëtteg",note:"12:00 – 18:00"}]},
-    ac:{title:"À la Carte",sub:"Eenzel Stécker, ouni Abonnement.",cats:["All","Gefligel","Rëndfleesch","Lamm"],add:"Derbäisetzen",items:[{id:1,name:"Poulet-Broscht",cat:"Gefligel",w:"500g",p:12.00,note:"Fräilaaf halal"},{id:2,name:"Poulet-Schenkelen",cat:"Gefligel",w:"600g",p:8.50,note:"Mat Knochen"},{id:3,name:"Ganze Poulet",cat:"Gefligel",w:"1.5kg",p:19.50,note:"Bakefertig"},{id:5,name:"Rëndfleesch Sirloin",cat:"Rëndfleesch",w:"400g",p:22.00,note:"28 Deeg gerëft"},{id:6,name:"Ribeye Steak",cat:"Rëndfleesch",w:"350g",p:29.00,note:"Marbréiert"},{id:7,name:"Gehackt Rëndfleesch",cat:"Rëndfleesch",w:"500g",p:12.00,note:"Frësch"},{id:8,name:"Filet Mignon",cat:"Rëndfleesch",w:"300g",p:29.00,note:"Zartst Stéck"},{id:9,name:"Lamm-Karree",cat:"Lamm",w:"600g",p:36.00,note:"Franséisch"},{id:10,name:"Lammschëller",cat:"Lamm",w:"1kg",p:27.00,note:"Mat Knochen"},{id:11,name:"Lammkoteletten",cat:"Lamm",w:"500g",p:29.00,note:"Loin"}]},
+    ac:{title:"À la Carte",sub:"Eenzel Stécker, ouni Abonnement.",cats:["All","Gefligel","Rëndfleesch","Kallefleesch","Lamm"],add:"Derbäisetzen"},
     cart:{title:"Äre Korf",empty:"Korf eidel",emptyNote:"Sicht eng Box fir ufänken.",sub:"Zwëschentotal",del:"Liwwerung",free:"Gratis",total:"Total",checkout:"Bestellen",remove:"Läschen",subTag:"Wëchentlech",oneTag:"Eemol",loginRequired:"Aloggen fir ze bestellen",freeNote:"🎉 Gratis Liwwerung applizéiert!"},
     auth:{signinTitle:"Wëllkomm zréck.",signupTitle:"Kont erstellen.",email:"E-Mail Adress",password:"Passwuert",name:"Vollstännegen Numm",signin:"Aloggen",signup:"Kont erstellen",switchSignup:"Keen Kont? Umellen",switchSignin:"Hutt e Kont? Aloggen",demo:"Demo Kont",demoNote:"demo@meatbeast.lu / demo1234",error:"Falsch E-Mail oder Passwuert.",errorExists:"Kont existéiert schonn.",secure:"Är Donnéeën sinn verschlësselt a sécher."},
     co:{title:"Bestellen",fname:"Virnumm",lname:"Familljennumm",email:"E-Mail",phone:"Telefon",addr:"Strooss an Hausnummer",city:"Stad",zip:"Postleitzuel",pay:"Bezuelen",card:"Kaartennummer",exp:"MM / JJ",cvv:"CVV",place:"Bestellen",note:"Wëchentlecht Abo — jiddereng Zäit pauséieren oder annuléieren.",ok:"Bestätegt. 🥩",okNote:"Kommand bestätegt. Éischt Liwwerung nächst Woch.",secure:"256-Bit SSL Verschlësselung"},
     dash:{title:"Dashboard",welcome:"Wëllkomm zréck",subStatus:"Abonnement",nextDel:"Nächst Liwwerung",upcoming:"Déi nächst",history:"Bestell-Geschicht",status:{active:"Aktiv",paused:"Pauséiert",cancelled:"Annuléiert",scheduled:"Geplangt",delivered:"Geliwwert"},pause:"Pauséieren",resume:"Weidermaachen",cancel:"Annuléieren",change:"Box wiesselen",pauseNote:"Bis zu 8 Wochen.",cancelNote:"Keng Käschten.",confirmCancel:"All Liwwerungen stoppen?",yes:"Jo, annuléieren",keep:"Behalen",noSub:"Keen aktiven Abonnement",noSubNote:"Abonanéiert Iech fir eng Box.",browse:"Boxen kucken"},
-    home:{boxesTitle:"D'Boxen.",boxesSub:"Véier Proteinen. Dräi Gréissten. All Woch.",seeAll:"All Boxen kucken →",fromTier:"ab Beast Lite",recipeLabel:"A jidder Box derbäi",recipeTitle1:"Net nëmmen Fleesch.",recipeTitle2:"Inspiratioun och.",recipeSub:"Kuresch Recetten aus 5 Wëltkichen, gratis a jidder Box.",browseAll:"All 46 Recetten kucken →",recipesCount:"40+ Recetten derbäi",ctaTitle:"Frësch vum Bauerenhaff.",ctaSub:"All Woch, ouni Ausnahm.",ctaBody:"Mat der Hand ausgewielte Stécker, Kälteketten-Liwwerung. Sou frësch wéi e Besuch beim Fleesche — ouni d'Rees.",ctaBtn:"Dës Woch ufänken →",cookNow:"Recett kucken →",showingCount:"Weist",recipes:"Recetten"},
+    home:{boxesTitle:"D'Boxen.",boxesSub:"Véier Proteinen. Dräi Gréissten. All Woch.",seeAll:"All Boxen kucken →",fromTier:"ab Beast Lite",recipeLabel:"A jidder Box derbäi",recipeTitle1:"Net nëmmen Fleesch.",recipeTitle2:"Inspiratioun och.",recipeSub:"Kuresch Recetten aus 10 Wëltkichen, gratis a jidder Box.",browseAll:"All 60+ Recetten kucken →",recipesCount:"62 Recetten derbäi",ctaTitle:"Frësch vum Bauerenhaff.",ctaSub:"All Woch, ouni Ausnahm.",ctaBody:"Mat der Hand ausgewielte Stécker, Kälteketten-Liwwerung. Sou frësch wéi e Besuch beim Fleesche — ouni d'Rees.",ctaBtn:"Dës Woch ufänken →",cookNow:"Recett kucken →",showingCount:"Weist",recipes:"Recetten"},
     cuisines:["All Recetten","Klassesch","BBQ","Arabesch","Indesch","Asiatesch"],
     footer:{note:"Frësch Fleesch, all Woch. Lëtzebuerg.",halal:"Halal Zertifizéiert",links:["FAQ","Liwwerung","Kontakt","Dateschutz"],faqItems:["Wéi fonctionéiert dat Abonnement?","Kann ech eng Woch iwwerspringen?","Wat ass Är Annuléierungspolitik?","Wéi gëtt d'Fleesch verpackt?","Ass all d'Fleesch Halal?"],deliveryItems:["Gratis Liwwerung mat Beast Max & Ultra","8€ mat Lite & À la Carte Bestellungen","Éischt Box: ëmmer gratis Liwwerung","Liwwerung 6 Deeg d'Woch","Moies (7–12) oder Nomëtteg (12–18)"],contactItems:["info@meatbeast.lu","Lëtzebuerg Stad","+352 691 000 000","Méindeg–Samschdeg 8:00–18:00","Instagram · Facebook"],privacyItems:["Mir verkafen Är Donnéeën ni","Bezuelung gesëchert duerch Stripe","GDPR-konform","Donnéeën an der EU gespäichert","Cookie-Astellungen"]},
   },
   bs:{
     nav:{home:"Početna",boxes:"Kutije",alacarte:"À la Carte",dash:"Moj račun",cart:"Korpa",login:"Prijava",logout:"Odjava"},
     hero:{badge:"Svježe meso · Sedmična dostava · Luksemburg",h1:"Svježe meso.",h2:"Na vaša vrata.",sub:"Premium odresci, ručno odabrani, sedmično dostavljeni. Od farme do vašeg frižidera — sveže kakvo treba biti.",cta:"Pogledajte kutije",ctaB:"À la Carte"},
-    stats:[["Nikad smrznuto.","Uvijek premium. Uvijek svježe."],["46 recepata","Uključeno. Skuhajte nešto epsko."],["6 dana sedmično","Jutro ili popodne. Vi birate."],["Od €39/sedm.","Premium Halal meso. Vaša vrata. Svake sedmice."]],
+    stats:[["Nikad smrznuto.","Uvijek premium. Uvijek svježe."],["62 recepata","Uključeno. Skuhajte nešto epsko."],["6 dana sedmično","Jutro ili popodne. Vi birate."],["Od €39/sedm.","Premium Halal meso. Vaša vrata. Svake sedmice."]],
     boxes:{title:"Kutije.",sub:"Četiri proteina. Tri veličine. Svake sedmice.",tierLabel:"Vaša veličina",subscribe:"Pretplatite se sedmično",weekly:"/sedm.",once:"Jednokratna narudžba",popular:"Najpopularnije",contents:"Šta je unutra",perKg:"/kg",deliveryNote:"Besplatna dostava za Max & Ultra · 8€ za Lite & À la Carte"},
     schedule:{title:"Odaberite termin.",day:"Dan dostave",time:"Vremenski okvir",days:["Ponedjeljak","Utorak","Srijeda","Četvrtak","Petak","Subota"],times:[{key:"morning",label:"Ujutro",note:"7:00 – 12:00"},{key:"afternoon",label:"Popodne",note:"12:00 – 18:00"}]},
-    ac:{title:"À la Carte",sub:"Pojedinačni komadi, bez pretplate.",cats:["Sve","Perad","Govedina","Jagnjetina"],add:"Dodaj",items:[{id:1,name:"Pileća prsa",cat:"Perad",w:"500g",p:12.00,note:"Slobodan uzgoj halal"},{id:2,name:"Pileći bataci",cat:"Perad",w:"600g",p:8.50,note:"S koskom"},{id:3,name:"Cijela piletina",cat:"Perad",w:"1.5kg",p:19.50,note:"Gotova za pečenje"},{id:5,name:"Goveđi biftek",cat:"Govedina",w:"400g",p:22.00,note:"Odležano 28 dana"},{id:6,name:"Ribeye odrezak",cat:"Govedina",w:"350g",p:29.00,note:"Mramorirana"},{id:7,name:"Mljevena govedina",cat:"Govedina",w:"500g",p:12.00,note:"Svježe mljevena"},{id:8,name:"Goveđi file",cat:"Govedina",w:"300g",p:29.00,note:"Najnježniji komad"},{id:9,name:"Jagnjeće rebra",cat:"Jagnjetina",w:"600g",p:36.00,note:"Francuski rez"},{id:10,name:"Jagnjeća plećka",cat:"Jagnjetina",w:"1kg",p:27.00,note:"S koskom"},{id:11,name:"Jagnjeći kotleti",cat:"Jagnjetina",w:"500g",p:29.00,note:"Kotleti"}]},
+    ac:{title:"À la Carte",sub:"Pojedinačni komadi, bez pretplate.",cats:["Sve","Perad","Govedina","Teletina","Jagnjetina"],add:"Dodaj"},
     cart:{title:"Vaša korpa",empty:"Korpa je prazna",emptyNote:"Pronađite kutiju za početak.",sub:"Međuzbir",del:"Dostava",free:"Besplatno",total:"Ukupno",checkout:"Naruči",remove:"Ukloni",subTag:"Sedmično",oneTag:"Jednokratno",loginRequired:"Prijavite se za narudžbu",freeNote:"🎉 Besplatna dostava primijenjena!"},
     auth:{signinTitle:"Dobrodošli nazad.",signupTitle:"Kreirajte račun.",email:"E-mail adresa",password:"Lozinka",name:"Puno ime",signin:"Prijava",signup:"Kreiraj račun",switchSignup:"Nemate račun? Registrujte se",switchSignin:"Imate račun? Prijavite se",demo:"Demo račun",demoNote:"demo@meatbeast.lu / demo1234",error:"Pogrešan e-mail ili lozinka.",errorExists:"Račun već postoji.",secure:"Vaši podaci su šifrirani i sigurni."},
     co:{title:"Narudžba",fname:"Ime",lname:"Prezime",email:"E-mail",phone:"Telefon",addr:"Ulica i broj",city:"Grad",zip:"Poštanski broj",pay:"Plaćanje",card:"Broj kartice",exp:"MM / GG",cvv:"CVV",place:"Naruči",note:"Sedmična pretplata — pauzirajte ili otkažite u bilo kom trenutku.",ok:"Potvrđeno. 🥩",okNote:"Narudžba potvrđena. Prva dostava sljedeće sedmice.",secure:"256-bitna SSL enkripcija"},
     dash:{title:"Nadzorna ploča",welcome:"Dobrodošli nazad",subStatus:"Pretplata",nextDel:"Sljedeća dostava",upcoming:"Nadolazeće",history:"Povijest narudžbi",status:{active:"Aktivna",paused:"Pauzirana",cancelled:"Otkazana",scheduled:"Zakazana",delivered:"Dostavljena"},pause:"Pauziraj",resume:"Nastavi",cancel:"Otkaži",change:"Promijeni kutiju",pauseNote:"Do 8 sedmica.",cancelNote:"Bez naknade.",confirmCancel:"Zaustaviti sve dostave?",yes:"Da, otkaži",keep:"Zadrži",noSub:"Nema aktivne pretplate",noSubNote:"Pretplatite se na kutiju.",browse:"Pogledaj kutije"},
-    home:{boxesTitle:"Kutije.",boxesSub:"Četiri proteina. Tri veličine. Svake sedmice.",seeAll:"Pogledaj sve kutije →",fromTier:"od Beast Lite",recipeLabel:"Uključeno u svaku kutiju",recipeTitle1:"Ne samo meso.",recipeTitle2:"I inspiracija.",recipeSub:"Odabrani recepti iz 5 svjetskih kuhinja, gratis uz svaku kutiju.",browseAll:"Pregledaj svih 46 recepata →",recipesCount:"40+ recepata uključeno",ctaTitle:"Svježe s farme.",ctaSub:"Svake sedmice, bez izuzetka.",ctaBody:"Ručno odabrani komadi, dostava hladnim lancem. Svježe kao odlazak kod mesara — bez odlaska.",ctaBtn:"Počnite ovu sedmicu →",cookNow:"Pogledaj recept →",showingCount:"Prikazuje",recipes:"recepata"},
+    home:{boxesTitle:"Kutije.",boxesSub:"Četiri proteina. Tri veličine. Svake sedmice.",seeAll:"Pogledaj sve kutije →",fromTier:"od Beast Lite",recipeLabel:"Uključeno u svaku kutiju",recipeTitle1:"Ne samo meso.",recipeTitle2:"I inspiracija.",recipeSub:"Odabrani recepti iz 10 svjetskih kuhinja, gratis uz svaku kutiju.",browseAll:"Pregledaj svih 60+ recepata →",recipesCount:"62 recepata uključeno",ctaTitle:"Svježe s farme.",ctaSub:"Svake sedmice, bez izuzetka.",ctaBody:"Ručno odabrani komadi, dostava hladnim lancem. Svježe kao odlazak kod mesara — bez odlaska.",ctaBtn:"Počnite ovu sedmicu →",cookNow:"Pogledaj recept →",showingCount:"Prikazuje",recipes:"recepata"},
     cuisines:["Svi recepti","Klasično","BBQ","Arapska","Indijska","Azijska"],
     footer:{note:"Svježe meso, sedmično. Luksemburg.",halal:"Halal certificirano",links:["FAQ","Dostava","Kontakt","Privatnost"],faqItems:["Kako funkcioniše pretplata?","Mogu li preskočiti sedmicu?","Kakva je politika otkazivanja?","Kako se meso pakuje?","Je li sve meso halal?"],deliveryItems:["Besplatna dostava za Beast Max & Ultra","8€ za Lite & À la Carte narudžbe","Prva kutija: uvijek besplatna dostava","Dostava 6 dana sedmično","Ujutro (7–12) ili Popodne (12–18)"],contactItems:["info@meatbeast.lu","Luksemburg Grad","+352 691 000 000","Ponedjeljak–Subota 8:00–18:00","Instagram · Facebook"],privacyItems:["Nikad ne prodajemo vaše podatke","Plaćanje sigurno putem Stripea","GDPR usklađeno","Podaci pohranjeni u EU","Postavke kolačića"]},
   },
   pt:{
     nav:{home:"Início",boxes:"Caixas",alacarte:"À la Carte",dash:"Painel",cart:"Carrinho",login:"Entrar",logout:"Sair"},
     hero:{badge:"Carne Fresca · Entrega Semanal · Luxemburgo",h1:"Carne fresca.",h2:"À sua porta.",sub:"Cortes premium, selecionados à mão, entregues semanalmente. Da quinta ao seu frigorífico — tão fresco quanto possível.",cta:"Ver Caixas",ctaB:"À la Carte"},
-    stats:[["Nunca congelado.","Sempre premium. Sempre fresco."],["46 receitas","Incluídas. Cozinha algo épico."],["6 dias/semana","Manhã ou tarde. A tua escolha."],["A partir de 39€/sem.","Cortes halal premium. À sua porta. Cada semana."]],
+    stats:[["Nunca congelado.","Sempre premium. Sempre fresco."],["62 receitas","Incluídas. Cozinha algo épico."],["6 dias/semana","Manhã ou tarde. A tua escolha."],["A partir de 39€/sem.","Cortes halal premium. À sua porta. Cada semana."]],
     boxes:{title:"Escolha a sua caixa.",sub:"Escolha o seu tamanho e proteína.",tierLabel:"O seu tamanho",subscribe:"Subscrever semanalmente",weekly:"/sem",once:"Encomenda única",popular:"Mais popular",contents:"O que contém",perKg:"/kg",deliveryNote:"Entrega grátis em Beast Max & Ultra · 8€ em Lite & À la Carte abaixo de 70€"},
     schedule:{title:"Agendar entrega.",day:"Dia de entrega",time:"Turno",days:["Segunda","Terça","Quarta","Quinta","Sexta","Sábado"],times:[{key:"morning",label:"Manhã",note:"7h – 12h"},{key:"afternoon",label:"Tarde",note:"12h – 18h"}]},
-    ac:{title:"À la Carte",sub:"Cortes individuais, sem compromisso.",cats:["Tudo","Aves","Vaca","Borrego"],add:"Adicionar",items:[{id:1,name:"Peito de Frango",cat:"Aves",w:"500g",p:12.00,note:"Livre halal"},{id:2,name:"Pernas de Frango",cat:"Aves",w:"600g",p:8.50,note:"Com osso"},{id:3,name:"Frango Inteiro",cat:"Aves",w:"1.5kg",p:19.50,note:"Pronto a assar"},{id:5,name:"Lombo de Vaca",cat:"Vaca",w:"400g",p:22.00,note:"28 dias curado"},{id:6,name:"Bife Entrecosto",cat:"Vaca",w:"350g",p:29.00,note:"Marmoreado"},{id:7,name:"Carne Picada",cat:"Vaca",w:"500g",p:11.00,note:"Fresca"},{id:8,name:"Filet Mignon",cat:"Vaca",w:"300g",p:32.00,note:"Mais tenro"},{id:9,name:"Carré de Borrego",cat:"Borrego",w:"600g",p:34.00,note:"Aparado"},{id:10,name:"Pá de Borrego",cat:"Borrego",w:"1kg",p:19.50,note:"Com osso"},{id:11,name:"Costeletas de Borrego",cat:"Borrego",w:"500g",p:22.00,note:"Lombo"}]},
+    ac:{title:"À la Carte",sub:"Cortes individuais, sem compromisso.",cats:["Tudo","Aves","Vaca","Vitela","Borrego"],add:"Adicionar"},
     cart:{title:"O seu carrinho",empty:"Carrinho vazio",emptyNote:"Escolha uma caixa para começar.",sub:"Subtotal",del:"Entrega",free:"Grátis",total:"Total",checkout:"Finalizar",remove:"Remover",subTag:"Semanal",oneTag:"Única",loginRequired:"Entre para finalizar",freeNote:"🎉 Entrega gratuita aplicada!"},
     auth:{signinTitle:"Bem-vindo de volta.",signupTitle:"Criar conta.",email:"Endereço de e-mail",password:"Senha",name:"Nome completo",signin:"Entrar",signup:"Criar conta",switchSignup:"Sem conta? Registar",switchSignin:"Tem conta? Entrar",demo:"Conta demo",demoNote:"demo@meatbeast.lu / demo1234",error:"E-mail ou senha inválidos.",errorExists:"Conta já existe.",secure:"Os seus dados estão encriptados e seguros."},
     co:{title:"Finalizar",fname:"Primeiro nome",lname:"Apelido",email:"E-mail",phone:"Telefone",addr:"Morada",city:"Cidade",zip:"Código Postal",pay:"Pagamento",card:"Número do cartão",exp:"MM / AA",cvv:"CVV",place:"Confirmar encomenda",note:"Subscrição semanal — pause ou cancele a qualquer momento.",ok:"Confirmado. 🥩",okNote:"Encomenda confirmada. Primeira entrega na próxima semana.",secure:"Encriptação SSL 256-bit"},
     dash:{title:"Painel",welcome:"Bem-vindo de volta",subStatus:"Subscrição",nextDel:"Próxima entrega",upcoming:"Próximas",history:"Histórico",status:{active:"Activo",paused:"Pausado",cancelled:"Cancelado",scheduled:"Agendado",delivered:"Entregue"},pause:"Pausar",resume:"Retomar",cancel:"Cancelar subscrição",change:"Mudar caixa",pauseNote:"Até 8 semanas.",cancelNote:"Sem taxas.",confirmCancel:"Parar todas as entregas?",yes:"Sim, cancelar",keep:"Manter",noSub:"Sem subscrição activa",noSubNote:"Subscreva uma caixa para gerir aqui.",browse:"Ver caixas"},
-    home:{boxesTitle:"As caixas.",boxesSub:"Quatro proteínas. Três tamanhos. Cada semana.",seeAll:"Ver todas as caixas →",fromTier:"a partir de Beast Lite",recipeLabel:"Incluído em cada caixa",recipeTitle1:"Não só carne.",recipeTitle2:"Inspiração também.",recipeSub:"Receitas de 5 cozinhas mundiais, incluídas gratuitamente em cada caixa.",browseAll:"Explorar as 46 receitas →",recipesCount:"Mais de 40 receitas",ctaTitle:"Fresco da quinta.",ctaSub:"Todas as semanas, sem falhar.",ctaBody:"Cortes selecionados à mão, entrega em cadeia de frio. Tão fresco como uma visita ao talho — sem a deslocação.",ctaBtn:"Começar esta semana →",cookNow:"Ver receita →",showingCount:"A mostrar",recipes:"receitas"},
+    home:{boxesTitle:"As caixas.",boxesSub:"Quatro proteínas. Três tamanhos. Cada semana.",seeAll:"Ver todas as caixas →",fromTier:"a partir de Beast Lite",recipeLabel:"Incluído em cada caixa",recipeTitle1:"Não só carne.",recipeTitle2:"Inspiração também.",recipeSub:"Receitas de 10 cozinhas mundiais, incluídas gratuitamente em cada caixa.",browseAll:"Explorar as 60+ receitas →",recipesCount:"62 receitas",ctaTitle:"Fresco da quinta.",ctaSub:"Todas as semanas, sem falhar.",ctaBody:"Cortes selecionados à mão, entrega em cadeia de frio. Tão fresco como uma visita ao talho — sem a deslocação.",ctaBtn:"Começar esta semana →",cookNow:"Ver receita →",showingCount:"A mostrar",recipes:"receitas"},
     cuisines:["Todas as receitas","Clássico","BBQ","Árabe","Indiano","Asiático"],
     footer:{note:"Carne fresca, semanalmente. Luxemburgo.",halal:"Certificado Halal",links:["FAQ","Entrega","Contacto","Privacidade"],faqItems:["Como funciona a subscrição?","Posso saltar uma semana?","Qual é a política de cancelamento?","Como é embalada a carne?","Toda a carne é halal?"],deliveryItems:["Entrega grátis em Beast Max & Ultra","8€ em pedidos Lite & À la Carte","Primeira caixa: entrega sempre grátis","Entrega 6 dias por semana","Manhã (7–12h) ou Tarde (12–18h)"],contactItems:["info@meatbeast.lu","Cidade do Luxemburgo","+352 691 000 000","Seg–Sáb 8h–18h","Instagram · Facebook"],privacyItems:["Nunca vendemos os seus dados","Pagamento seguro via Stripe","Conformidade RGPD","Dados armazenados na UE","Preferências de cookies"]},
   },
   ar:{
     nav:{home:"الرئيسية",boxes:"الصناديق",alacarte:"آلا كارت",dash:"لوحتي",cart:"السلة",login:"تسجيل الدخول",logout:"خروج"},
     hero:{badge:"لحم طازج · توصيل أسبوعي · لوكسمبورغ",h1:"لحم طازج.",h2:"عند بابك.",sub:"قطع ممتازة مختارة بعناية، تُوصّل كل أسبوع. من المزرعة إلى ثلاجتك — بأعلى درجات النضارة.",cta:"تسوّق الصناديق",ctaB:"آلا كارت"},
-    stats:[["لم يُجمَّد قط.","دائماً فاخر. دائماً طازج."],["46 وصفة","مضمّنة. اطبخ شيئاً رائعاً."],["6 أيام/أسبوع","صباحاً أو مساءً. أنت تختار."],["من 39€ أسبوعياً","قطع حلال فاخرة. بابك. كل أسبوع."]],
+    stats:[["لم يُجمَّد قط.","دائماً فاخر. دائماً طازج."],["62 وصفة","مضمّنة. اطبخ شيئاً رائعاً."],["6 أيام/أسبوع","صباحاً أو مساءً. أنت تختار."],["من 39€ أسبوعياً","قطع حلال فاخرة. بابك. كل أسبوع."]],
     boxes:{title:"اختر صندوقك.",sub:"اختر حجمك ونوع البروتين.",tierLabel:"حجمك",subscribe:"اشترك أسبوعياً",weekly:"/أسبوع",once:"طلب لمرة واحدة",popular:"الأكثر شيوعاً",contents:"محتويات الصندوق",perKg:"/كغ",deliveryNote:"توصيل مجاني مع Max وUltra · 8€ مع Lite وآلا كارت تحت 70€"},
     schedule:{title:"جدوِل التوصيل.",day:"يوم التوصيل",time:"الوقت المفضل",days:["الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"],times:[{key:"morning",label:"صباحاً",note:"7:00 – 12:00"},{key:"afternoon",label:"مساءً",note:"12:00 – 18:00"}]},
-    ac:{title:"آلا كارت",sub:"قطع مفردة، بدون اشتراك.",cats:["الكل","دواجن","لحم بقري","لحم ضأن"],add:"أضف",items:[{id:1,name:"صدر دجاج",cat:"دواجن",w:"500g",p:12.00,note:"مزرعة حرة حلال"},{id:2,name:"أرجل دجاج",cat:"دواجن",w:"600g",p:8.50,note:"مع عظم"},{id:3,name:"دجاجة كاملة",cat:"دواجن",w:"1.5kg",p:19.50,note:"جاهزة للفرن"},{id:5,name:"سيرلوين بقري",cat:"لحم بقري",w:"400g",p:22.00,note:"معتّق 28 يوم"},{id:6,name:"ريبآي ستيك",cat:"لحم بقري",w:"350g",p:29.00,note:"رخامي فاخر"},{id:7,name:"لحم مفروم",cat:"لحم بقري",w:"500g",p:12.00,note:"طازج"},{id:8,name:"فيليه بقري",cat:"لحم بقري",w:"300g",p:29.00,note:"الأكثر طراوة"},{id:9,name:"ضلع الضأن",cat:"لحم ضأن",w:"600g",p:36.00,note:"مشذّب"},{id:10,name:"كتف ضأن",cat:"لحم ضأن",w:"1kg",p:27.00,note:"مع عظم"},{id:11,name:"قطع ضأن",cat:"لحم ضأن",w:"500g",p:29.00,note:"شريحة اللحم"}]},
+    ac:{title:"آلا كارت",sub:"قطع مفردة، بدون اشتراك.",cats:["الكل","دواجن","لحم بقري","عجل","لحم ضأن"],add:"أضف"},
     cart:{title:"سلتك",empty:"السلة فارغة",emptyNote:"اختر صندوقاً للبدء.",sub:"المجموع الفرعي",del:"التوصيل",free:"مجاني",total:"الإجمالي",checkout:"إتمام الطلب",remove:"حذف",subTag:"أسبوعي",oneTag:"مرة واحدة",loginRequired:"سجّل الدخول لإتمام الطلب",freeNote:"🎉 تم تطبيق التوصيل المجاني!"},
     auth:{signinTitle:"مرحباً بعودتك.",signupTitle:"إنشاء حساب.",email:"البريد الإلكتروني",password:"كلمة المرور",name:"الاسم الكامل",signin:"تسجيل الدخول",signup:"إنشاء حساب",switchSignup:"ليس لديك حساب؟ سجّل",switchSignin:"لديك حساب؟ ادخل",demo:"حساب تجريبي",demoNote:"demo@meatbeast.lu / demo1234",error:"بريد إلكتروني أو كلمة مرور غير صحيحة.",errorExists:"الحساب موجود بالفعل.",secure:"بياناتك مشفّرة وآمنة."},
     co:{title:"إتمام الطلب",fname:"الاسم الأول",lname:"اسم العائلة",email:"البريد الإلكتروني",phone:"الهاتف",addr:"عنوان التوصيل",city:"المدينة",zip:"الرمز البريدي",pay:"الدفع",card:"رقم البطاقة",exp:"MM / YY",cvv:"CVV",place:"تأكيد الطلب",note:"اشتراك أسبوعي — يمكنك الإيقاف أو الإلغاء في أي وقت.",ok:"تم التأكيد. 🥩",okNote:"تم تأكيد الطلب. أول توصيل الأسبوع القادم.",secure:"تشفير SSL 256-bit"},
     dash:{title:"لوحة التحكم",welcome:"مرحباً بعودتك",subStatus:"الاشتراك",nextDel:"التوصيل القادم",upcoming:"المقبلة",history:"السجل",status:{active:"نشط",paused:"موقوف",cancelled:"ملغى",scheduled:"مجدوَل",delivered:"تم التوصيل"},pause:"إيقاف مؤقت",resume:"استئناف",cancel:"إلغاء الاشتراك",change:"تغيير الصندوق",pauseNote:"حتى 8 أسابيع.",cancelNote:"بدون رسوم.",confirmCancel:"وقف جميع التوصيلات؟",yes:"نعم، إلغاء",keep:"الاحتفاظ",noSub:"لا يوجد اشتراك نشط",noSubNote:"اشترك في صندوق لإدارته هنا.",browse:"تصفّح الصناديق"},
-    home:{boxesTitle:"الصناديق.",boxesSub:"أربعة بروتينات. ثلاثة أحجام. كل أسبوع.",seeAll:"عرض جميع الصناديق ←",fromTier:"من Beast Lite",recipeLabel:"مضمّن مع كل صندوق",recipeTitle1:"ليس فقط لحماً.",recipeTitle2:"إلهاماً أيضاً.",recipeSub:"وصفات منتقاة من 5 مطابخ عالمية، مضمّنة مجاناً مع كل صندوق.",browseAll:"تصفّح الـ 46 وصفة ←",recipesCount:"أكثر من 40 وصفة",ctaTitle:"طازج من المزرعة.",ctaSub:"كل أسبوع، بلا انقطاع.",ctaBody:"قطع مختارة بعناية، توصيل بسلسلة التبريد. طازج كزيارة الجزار — دون الرحلة.",ctaBtn:"ابدأ هذا الأسبوع ←",cookNow:"عرض الوصفة ←",showingCount:"يُظهر",recipes:"وصفة"},
+    home:{boxesTitle:"الصناديق.",boxesSub:"أربعة بروتينات. ثلاثة أحجام. كل أسبوع.",seeAll:"عرض جميع الصناديق ←",fromTier:"من Beast Lite",recipeLabel:"مضمّن مع كل صندوق",recipeTitle1:"ليس فقط لحماً.",recipeTitle2:"إلهاماً أيضاً.",recipeSub:"وصفات منتقاة من 10 مطابخ عالمية، مضمّنة مجاناً مع كل صندوق.",browseAll:"تصفّح الـ 60+ وصفة ←",recipesCount:"62 وصفة",ctaTitle:"طازج من المزرعة.",ctaSub:"كل أسبوع، بلا انقطاع.",ctaBody:"قطع مختارة بعناية، توصيل بسلسلة التبريد. طازج كزيارة الجزار — دون الرحلة.",ctaBtn:"ابدأ هذا الأسبوع ←",cookNow:"عرض الوصفة ←",showingCount:"يُظهر",recipes:"وصفة"},
     cuisines:["جميع الوصفات","كلاسيكي","شواء","عربي","هندي","آسيوي"],
     footer:{note:"لحم طازج أسبوعياً. لوكسمبورغ.",halal:"معتمد حلال",links:["الأسئلة الشائعة","التوصيل","التواصل","الخصوصية"],faqItems:["كيف يعمل الاشتراك؟","هل يمكنني تخطي أسبوع؟","ما سياسة الإلغاء؟","كيف يُعبَّأ اللحم؟","هل اللحم حلال بالكامل؟"],deliveryItems:["توصيل مجاني مع صناديق Max وUltra","8€ مع طلبات Lite وآلا كارت","صندوقك الأول: توصيل مجاني دائماً","التوصيل 6 أيام أسبوعياً","صباحاً (7–12) أو مساءً (12–18)"],contactItems:["info@meatbeast.lu","مدينة لوكسمبورغ","+352 691 000 000","الاثنين–السبت 8:00–18:00","إنستغرام · فيسبوك"],privacyItems:["لا نبيع بياناتك أبداً","الدفع مؤمَّن عبر Stripe","متوافق مع GDPR","البيانات مخزّنة في الاتحاد الأوروبي","تفضيلات ملفات تعريف الارتباط"]},
   },
@@ -2187,7 +2448,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [extraUsers, setExtraUsers] = useState({});
   const [done, setDone] = useState(false);
+  const [lastOrder, setLastOrder] = useState(null);
   const [pendingSub, setPendingSub] = useState(null);
+  const [pendingALC, setPendingALC] = useState(null); // { items:[{id,name,price,qty}], boxName:string|null }
   const [boxDetail, setBoxDetail] = useState(null);
   const [activeRecipeId, setActiveRecipeId] = useState(null);
   const [footerPage, setFooterPage] = useState(null);
@@ -2202,7 +2465,11 @@ export default function App() {
   function go(v) { setView(v); setDone(false); window.scrollTo(0,0); }
 
   function addCart(item) {
-    setCart(p=>{ const ex=p.find(c=>c.id===item.id); return ex?p.map(c=>c.id===item.id?{...c,qty:c.qty+1}:c):[...p,{...item,qty:1}]; });
+    setCart(p=>{
+      const incBy = item.qty || 1;
+      const ex=p.find(c=>c.id===item.id);
+      return ex ? p.map(c=>c.id===item.id?{...c,qty:c.qty+incBy}:c) : [...p,{...item,qty:incBy}];
+    });
   }
 
   function login(email, pw) {
@@ -2214,7 +2481,7 @@ export default function App() {
   function signup(email, pw, name) {
     const k=email.toLowerCase();
     if(allUsers[k]) return false;
-    const nu={password:pw,name,orders:[],upcoming:[],sub:null};
+    const nu={password:pw,name,orders:[],upcoming:[],sub:null,savedBoxes:[]};
     setExtraUsers(p=>({...p,[k]:nu}));
     setUser({email:k,...nu}); return true;
   }
@@ -2229,19 +2496,87 @@ export default function App() {
     if(!user) go("auth"); else go("schedule");
   }
 
+  // À la carte / Build-Your-Own-Box: routes through the SAME schedule step as
+  // fixed boxes before anything lands in the cart, keeping delivery scheduling
+  // consistent across both purchase types.
+  function startALCOrder(items, boxName) {
+    setPendingALC({items,boxName:boxName||null});
+    if(!user) go("auth"); else go("schedule");
+  }
+
   function confirmSchedule(day, time) {
-    if(!pendingSub) return;
-    const {boxKey,tierKey,isMonthly}=pendingSub;
-    const bx=BOXES.find(b=>b.key===boxKey);
-    const pr=bx.price[tierKey];
-    const tier=TIERS.find(t=>t.key===tierKey);
-    addCart({id:`box-${boxKey}-${tierKey}`,name:bx.name,tierLabel:tier.label,size:tier.sub,price:pr,isMonthly,day,time});
-    setPendingSub(null); go("cart");
+    if(pendingSub){
+      const {boxKey,tierKey,isMonthly}=pendingSub;
+      const bx=BOXES.find(b=>b.key===boxKey);
+      const pr=bx.price[tierKey];
+      const tier=TIERS.find(t=>t.key===tierKey);
+      addCart({id:`box-${boxKey}-${tierKey}`,name:bx.name,tierLabel:tier.label,size:tier.sub,price:pr,isMonthly,day,time});
+      setPendingSub(null); go("cart");
+      return;
+    }
+    if(pendingALC){
+      const {items,boxName}=pendingALC;
+      if(boxName){
+        const total=items.reduce((s,i)=>s+i.price*i.qty,0);
+        addCart({id:`byob-${Date.now()}`,name:`🧺 ${boxName}`,price:total,qty:1,isMonthly:false,day,time,isCustomBox:true,contents:items});
+        // Save as a reorder template so the customer can re-add it in one tap next time
+        if(user){
+          setUser(p=>{
+            const existing=(p.savedBoxes||[]).filter(b=>b.name.toLowerCase()!==boxName.toLowerCase());
+            return {...p, savedBoxes:[{id:`sb-${Date.now()}`,name:boxName,items,total,savedAt:new Date().toISOString().slice(0,10)}, ...existing].slice(0,10)};
+          });
+        }
+      } else {
+        items.forEach(it=>addCart({id:`ac-${it.id}-${Date.now()}`,srcId:it.id,name:it.name,price:it.price,qty:it.qty,isMonthly:false,day,time}));
+      }
+      setPendingALC(null); go("cart");
+      return;
+    }
+  }
+
+  // Reorder a previously saved Build-Your-Own-Box template in one tap —
+  // goes through the same schedule step as any other order, just skips
+  // having to reselect every item.
+  function reorderSavedBox(savedBox){
+    startALCOrder(savedBox.items, savedBox.name);
   }
 
   function placeOrder() {
     const s=cart.find(i=>i.isMonthly);
     if(s&&user) setUser(p=>({...p,sub:{box:s.name,tier:s.tierLabel,status:"active",weeklyPrice:s.price,day:s.day,time:s.time}}));
+
+    // Record every order — subscription, à la carte, or BYOB — into history and
+    // upcoming deliveries. Previously only the subscription was tracked here,
+    // so à la carte and Build-Your-Own-Box purchases never appeared in the
+    // dashboard after checkout even though payment had gone through.
+    let orderId = null;
+    if(user && cart.length>0){
+      orderId = `#MB-${Math.floor(1000+Math.random()*9000)}`;
+      const total = cart.reduce((sum,i)=>sum+i.price*i.qty,0) + deliveryFee;
+      const scheduled = cart.find(i=>i.day) || cart[0];
+      let label, tierLabel;
+      if(s){ label=s.name; tierLabel=s.tierLabel; }
+      else if(cart.some(i=>i.isCustomBox)){ const cb=cart.find(i=>i.isCustomBox); label=cb.name; tierLabel="Custom box"; }
+      else { label=`À la Carte`; tierLabel=`${cart.reduce((n,i)=>n+i.qty,0)} item${cart.reduce((n,i)=>n+i.qty,0)>1?"s":""}`; }
+      const today=new Date().toISOString().slice(0,10);
+      const newOrder={ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", status:"scheduled", total };
+      setUser(p=>({
+        ...p,
+        orders:[newOrder, ...(p.orders||[])],
+        upcoming:[{ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", time:scheduled?.time||"—", status:"scheduled" }, ...(p.upcoming||[])],
+      }));
+    }
+
+    // Snapshot exactly what was ordered, before the cart is cleared, so the
+    // confirmation screen can show a real summary instead of a generic message.
+    setLastOrder({
+      id: orderId,
+      items: cart.map(i=>({name:i.name, qty:i.qty, price:i.price, tierLabel:i.tierLabel, isMonthly:i.isMonthly, isCustomBox:i.isCustomBox})),
+      subtotal, deliveryFee, total: subtotal+deliveryFee,
+      day: (cart.find(i=>i.day)||{}).day || null,
+      time: (cart.find(i=>i.time)||{}).time || null,
+    });
+
     setCart([]); setDone(true);
   }
 
@@ -2323,12 +2658,12 @@ export default function App() {
         {view==="allrecipes"&& <AllRecipesV go={go} openRecipe={openRecipe} lang={lang}/>}
         {view==="boxdetail" && <BoxDetailV t={t} detail={boxDetail} go={go} onSelect={onSelectBox} openRecipe={openRecipe} lang={lang}/> }
         {view==="recipe"    && <RecipeV key={activeRecipeId+lang} recipeId={activeRecipeId} go={go} boxDetail={boxDetail} lang={lang}/>}
-        {view==="schedule"  && <ScheduleV t={t} pending={pendingSub} onConfirm={confirmSchedule} go={go}/>}
-        {view==="alacarte"  && <AlaCV t={t} addCart={addCart} go={go}/>}
-        {view==="cart"      && <CartV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} setCart={setCart} go={go} user={user}/>}
-        {view==="checkout"  && <CoV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} place={placeOrder} done={done} go={go} user={user}/>}
-        {view==="auth"      && <AuthV t={t} go={go} pendingSub={pendingSub}/>}
-        {view==="dash"      && <DashV t={t} user={user} go={go} updateSub={updateSub}/>}
+        {view==="schedule"  && <ScheduleV t={t} pending={pendingSub} pendingALC={pendingALC} onConfirm={confirmSchedule} go={go}/>}
+        {view==="alacarte"  && <AlaCV t={t} lang={lang} go={go} startALCOrder={startALCOrder} user={user} reorderSavedBox={reorderSavedBox}/>}
+        {view==="cart"      && <CartV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} setCart={setCart} go={go} user={user} lang={lang} openRecipe={openRecipe}/>}
+        {view==="checkout"  && <CoV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} place={placeOrder} done={done} go={go} user={user} lastOrder={lastOrder}/>}
+        {view==="auth"      && <AuthV t={t} go={go} pendingSub={pendingSub} pendingALC={pendingALC}/>}
+        {view==="dash"      && <DashV t={t} user={user} go={go} updateSub={updateSub} reorderSavedBox={reorderSavedBox}/>}
         {footerPage         && <FooterPageV page={footerPage} lang={lang} onClose={()=>setFooterPage(null)}/>}
 
         <footer style={{borderTop:"1px solid #EBE7E0",padding:"36px 5%",marginTop:80,background:"#fff"}}>
@@ -2461,11 +2796,6 @@ function MeatHeroImage(){
           </div>
         </div>
       </div>
-      {/* Halal badge — bottom right */}
-      <div style={{position:"absolute",bottom:18,right:18,background:"rgba(255,255,255,.12)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"5px 10px",display:"flex",alignItems:"center",gap:5}}>
-        <span style={{fontSize:13,color:"#fff"}}>☪</span>
-        <span style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:700,color:"#fff",letterSpacing:".08em"}}>HALAL</span>
-      </div>
       {/* Top badge */}
       <div style={{position:"absolute",top:16,right:16,background:"#D97950",borderRadius:8,padding:"5px 12px"}}>
         <div style={{fontFamily:"'Outfit',sans-serif",fontSize:9,fontWeight:800,color:"#fff",letterSpacing:".1em",textTransform:"uppercase"}}>Delivered Weekly</div>
@@ -2489,10 +2819,6 @@ function MeatBoxImage(){
         <div style={{background:"rgba(217,121,80,0.95)",backdropFilter:"blur(4px)",borderRadius:12,padding:"14px 28px",textAlign:"center",boxShadow:"0 8px 24px rgba(0,0,0,.25)"}}>
           <div style={{fontFamily:"'Outfit',sans-serif",fontSize:22,fontWeight:900,color:"#fff",letterSpacing:"-.01em",lineHeight:1}}>MEAT BEAST</div>
           <div style={{fontFamily:"'Outfit',sans-serif",fontSize:9,color:"rgba(255,255,255,.8)",letterSpacing:".18em",textTransform:"uppercase",marginTop:4}}>Premium Halal · Luxembourg</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,.15)",backdropFilter:"blur(6px)",borderRadius:99,padding:"5px 14px",border:"1px solid rgba(255,255,255,.3)"}}>
-          <span style={{fontSize:13,color:"#fff"}}>☪</span>
-          <span style={{fontFamily:"'Outfit',sans-serif",fontSize:10,fontWeight:700,color:"#fff",letterSpacing:".1em"}}>HALAL CERTIFIED</span>
         </div>
       </div>
     </div>
@@ -2984,18 +3310,23 @@ function RecipeV({recipeId,go,boxDetail,lang}){
     </div>
   );
 }
-function ScheduleV({t,pending,onConfirm,go}) {
+function ScheduleV({t,pending,pendingALC,onConfirm,go}) {
   const sch=t.schedule;
   const [day,setDay]=useState(sch.days[0]);
   const [time,setTime]=useState("morning");
-  if(!pending){ go("boxes"); return null; }
-  const bx=BOXES.find(b=>b.key===pending.boxKey);
-  const tier=TIERS.find(tr=>tr.key===pending.tierKey);
+  if(!pending && !pendingALC){ go("boxes"); return null; }
+  const bx=pending && BOXES.find(b=>b.key===pending.boxKey);
+  const tier=pending && TIERS.find(tr=>tr.key===pending.tierKey);
+  const alcCount=pendingALC && pendingALC.items.reduce((s,i)=>s+i.qty,0);
   return(
     <div style={{padding:"60px 5% 96px",maxWidth:560,margin:"0 auto"}}>
       <div className="up" style={{marginBottom:36}}>
         <h1 className="serif" style={{fontSize:44,fontWeight:700,letterSpacing:"-.03em",marginBottom:8}}>{sch.title}</h1>
-        <p style={{fontSize:15,color:"#78716C"}}>For <strong>{bx?.name}</strong> · {tier?.label}</p>
+        {pending?(
+          <p style={{fontSize:15,color:"#78716C"}}>For <strong>{bx?.name}</strong> · {tier?.label}</p>
+        ):(
+          <p style={{fontSize:15,color:"#78716C"}}>{pendingALC.boxName?(<>Your box: <strong>"{pendingALC.boxName}"</strong></>):(<>À la carte · <strong>{alcCount} item{alcCount>1?"s":""}</strong></>)}</p>
+        )}
       </div>
       <div className="card up d1" style={{padding:"24px",marginBottom:14}}>
         <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".08em",textTransform:"uppercase",marginBottom:14}}>{sch.day}</div>
@@ -3033,15 +3364,37 @@ function ScheduleV({t,pending,onConfirm,go}) {
 }
 
 /* ─── À LA CARTE ─────────────────────────────────────────────────────────── */
-function AlaCV({t,addCart,go}) {
+function AlaCV({t,go,lang,startALCOrder,user,reorderSavedBox}) {
+  const fb=(key)=> (t.ac && t.ac[key]) || (AC_UI[lang]&&AC_UI[lang][key]) || AC_UI.en[key];
+  const [mode,setMode]=useState("individual"); // "individual" | "byob"
   const [cat,setCat]=useState(0);
-  const [ok,setOk]=useState({});
-  const cats=t.ac.cats;
-  const items=cat===0?t.ac.items:t.ac.items.filter(i=>i.cat===cats[cat]);
-  function doAdd(item){ addCart({id:`ac-${item.id}`,name:item.name,price:item.p,qty:1}); setOk(a=>({...a,[item.id]:true})); setTimeout(()=>setOk(a=>({...a,[item.id]:false})),1400); }
+  const cats=t.ac.cats; // [All, Poultry, Beef, Veal, Lamb]
+  const catKeys=["all","poultry","beef","veal","lamb"];
+  const items=cat===0?ALC_ITEMS:ALC_ITEMS.filter(i=>i.cat===catKeys[cat]);
+  const [sel,setSel]=useState({}); // { itemId: qty }
+  const [boxName,setBoxName]=useState("");
+
+  function inc(id){ setSel(p=>({...p,[id]:(p[id]||0)+1})); }
+  function dec(id){ setSel(p=>{ const n={...p}; if(!n[id])return n; n[id]-=1; if(n[id]<=0)delete n[id]; return n; }); }
+  function clearSel(){ setSel({}); setBoxName(""); }
+
+  const selectedList=Object.entries(sel).map(([id,qty])=>{
+    const it=ALC_ITEMS.find(x=>x.id===Number(id));
+    return { id:it.id, name:alcName(it,lang), price:it.p, qty };
+  });
+  const selCount=selectedList.reduce((s,i)=>s+i.qty,0);
+  const selSubtotal=selectedList.reduce((s,i)=>s+i.price*i.qty,0);
+
+  function goSchedule(){
+    if(selectedList.length===0) return;
+    const name=mode==="byob" ? (boxName.trim()||null) : null;
+    startALCOrder(selectedList, name);
+    clearSel();
+  }
+
   return(
     <div style={{padding:"52px 5% 96px",maxWidth:1000,margin:"0 auto"}}>
-      <div className="up" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:32,flexWrap:"wrap",gap:12}}>
+      <div className="up" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:24,flexWrap:"wrap",gap:12}}>
         <div>
           <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:4}}>Add-ons</div>
           <h1 className="serif" style={{fontSize:40,fontWeight:700,letterSpacing:"-.03em",marginBottom:4}}>{t.ac.title}</h1>
@@ -3049,33 +3402,106 @@ function AlaCV({t,addCart,go}) {
         </div>
         <button className="pb" onClick={()=>go("boxes")} style={{fontSize:13}}>← Back to boxes</button>
       </div>
+
+      {/* Mode switch: Individual cuts vs Build Your Own Box */}
+      <div className="up d1" style={{display:"flex",gap:8,marginBottom:18}}>
+        <button className={`seg${mode==="individual"?" on":""}`} onClick={()=>setMode("individual")}>{fb("individualTab")}</button>
+        <button className={`seg${mode==="byob"?" on":""}`} onClick={()=>setMode("byob")}>{fb("byobTab")}</button>
+      </div>
+
+      {mode==="byob" && (
+        <div className="card up d1" style={{padding:"14px 18px",marginBottom:18,display:"flex",alignItems:"center",gap:10,background:"#FDF6EE"}}>
+          <span style={{fontSize:20}}>🧺</span>
+          <input className="inp" style={{flex:1,background:"#fff"}} placeholder={fb("namePlaceholder")} value={boxName} onChange={e=>setBoxName(e.target.value)} maxLength={40}/>
+        </div>
+      )}
+
+      {/* Saved boxes — reorder a previously named box in one tap */}
+      {mode==="byob" && user?.savedBoxes?.length>0 && (
+        <div className="up d1" style={{marginBottom:22}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".07em",textTransform:"uppercase",marginBottom:10}}>Your saved boxes</div>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+            {user.savedBoxes.map(sb=>(
+              <div key={sb.id} className="card" style={{flexShrink:0,minWidth:190,padding:"12px 14px"}}>
+                <div style={{fontSize:13,fontWeight:700,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>🧺 {sb.name}</div>
+                <div style={{fontSize:11,color:"#A8A29E",marginBottom:8}}>{sb.items.reduce((n,i)=>n+i.qty,0)} items · €{sb.total.toFixed(2)}</div>
+                <button className="pb" style={{width:"100%",padding:"6px 10px",fontSize:12}} onClick={()=>reorderSavedBox(sb)}>🔁 Reorder</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="up d1" style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
         {cats.map((c,i)=><button key={i} className={`cpill${cat===i?" on":""}`} onClick={()=>setCat(i)}>{c}</button>)}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}} className="g3r">
-        {items.map((item,i)=>(
-          <div key={item.id} className="card up" style={{padding:"16px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,transition:"border .15s",animationDelay:`${i*.04}s`}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor="#D4CFC8"}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#EBE7E0"}}>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:100}} className="g3r">
+        {items.map((item,i)=>{
+          const qty=sel[item.id]||0;
+          return(
+          <div key={item.id} className="card up" style={{padding:"16px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,transition:"border .15s",animationDelay:`${i*.03}s`,borderColor:qty>0?"#D97950":"#EBE7E0"}}>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.name}</div>
-              <div style={{fontSize:12,color:"#A8A29E",marginTop:1}}>{item.note} · {item.w}</div>
+              <div style={{fontSize:14,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{alcName(item,lang)}</div>
+              <div style={{fontSize:12,color:"#A8A29E",marginTop:1}}>{item.w}</div>
               <div style={{fontSize:17,fontWeight:900,marginTop:5}}>€{item.p.toFixed(2)}</div>
             </div>
-            <button style={{flexShrink:0,padding:"8px 14px",borderRadius:9,border:`1.5px solid ${ok[item.id]?"#4A7A3E":"#E2DDD6"}`,background:ok[item.id]?"#EFF6EC":"transparent",color:ok[item.id]?"#3D7A4E":"#1C1917",cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,transition:"all .18s",minWidth:78,textAlign:"center"}} onClick={()=>doAdd(item)}>
-              {ok[item.id]?"✓":t.ac.add}
-            </button>
+            {qty===0?(
+              <button style={{flexShrink:0,padding:"8px 14px",borderRadius:9,border:"1.5px solid #E2DDD6",background:"transparent",color:"#1C1917",cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,transition:"all .18s",minWidth:78,textAlign:"center"}} onClick={()=>inc(item.id)}>
+                {t.ac.add}
+              </button>
+            ):(
+              <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+                <button onClick={()=>dec(item.id)} style={{width:28,height:28,borderRadius:8,border:"1.5px solid #E2DDD6",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:15}}>−</button>
+                <span style={{minWidth:18,textAlign:"center",fontWeight:700,fontSize:14}}>{qty}</span>
+                <button onClick={()=>inc(item.id)} style={{width:28,height:28,borderRadius:8,border:"1.5px solid #D97950",background:"#D97950",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:15}}>+</button>
+              </div>
+            )}
           </div>
-        ))}
+        );})}
       </div>
+
+      {/* Sticky selection bar */}
+      {selCount>0 && (
+        <div style={{position:"fixed",left:0,right:0,bottom:0,background:"#1C1917",padding:"14px 5%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,zIndex:40,flexWrap:"wrap"}}>
+          <div style={{color:"#F9F7F4"}}>
+            <div style={{fontSize:13,fontWeight:700}}>{selCount} {fb("selected")}{mode==="byob"&&boxName.trim()?` · "${boxName.trim()}"`:""}</div>
+            <div style={{fontSize:12,color:"#A8A29E"}}>{fb("subtotalLbl")}: €{selSubtotal.toFixed(2)}</div>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button className="ob" style={{background:"transparent",borderColor:"#4A4540",color:"#A8A29E"}} onClick={clearSel}>{fb("clear")}</button>
+            <button className="pb" onClick={goSchedule}>{fb("scheduleBtn")}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ─── CART ───────────────────────────────────────────────────────────────── */
-function CartV({t,cart,subtotal,deliveryFee,setCart,go,user}) {
+function CartV({t,cart,subtotal,deliveryFee,setCart,go,user,lang,openRecipe}) {
   const rm=id=>setCart(p=>p.filter(c=>c.id!==id));
   const grandTotal=subtotal+deliveryFee;
   const isFree=deliveryFee===0;
+
+  // Gather ALC_ITEMS ids present in the cart (individual à la carte lines via
+  // srcId, plus everything inside any named Build-Your-Own-Box), AND keywords
+  // for any full box in the cart (boxes aren't linked to ALC_ITEMS ids, so we
+  // derive keywords from the box's own protein category instead) — together
+  // these feed one combined recipe suggestion strip covering everything in
+  // the basket, not just à la carte/BYOB.
+  const BOX_KEYWORDS = { flock:["chicken","turkey"], riot:["beef","lamb"], bull:["beef"], crown:["chicken","beef","veal","lamb"] };
+  const cartAlcIds=[];
+  const boxKeywords=[];
+  cart.forEach(c=>{
+    if(c.srcId) cartAlcIds.push(c.srcId);
+    if(c.contents) c.contents.forEach(x=>cartAlcIds.push(x.id));
+    if(c.isMonthly!==undefined && c.id?.startsWith("box-")){
+      const boxKey=c.id.split("-")[1];
+      if(BOX_KEYWORDS[boxKey]) boxKeywords.push(...BOX_KEYWORDS[boxKey]);
+    }
+  });
+  const suggestedRecipes = matchRecipesForCart(cartAlcIds, boxKeywords);
   return(
     <div style={{padding:"60px 5% 96px",maxWidth:660,margin:"0 auto"}}>
       <h1 className="serif up" style={{fontSize:44,fontWeight:700,letterSpacing:"-.03em",marginBottom:32}}>{t.cart.title}</h1>
@@ -3119,6 +3545,25 @@ function CartV({t,cart,subtotal,deliveryFee,setCart,go,user}) {
             </div>
           )}
 
+          {/* Ingredient-aware recipe suggestions */}
+          {suggestedRecipes.length>0 && (
+            <div className="up" style={{marginBottom:18}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".07em",textTransform:"uppercase",marginBottom:10}}>🍳 You can make this</div>
+              <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+                {suggestedRecipes.map(r=>{
+                  const rm2=getRecipeMeta(lang,r.id);
+                  return(
+                    <div key={r.id} onClick={()=>openRecipe(r.id)} className="card" style={{flexShrink:0,width:168,padding:"12px 14px",cursor:"pointer",transition:"border .15s"}}>
+                      <div style={{fontSize:24,marginBottom:6}}>{r.emoji}</div>
+                      <div style={{fontSize:13,fontWeight:700,lineHeight:1.35,marginBottom:4,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{rm2.name||r.name}</div>
+                      <div style={{fontSize:11,color:"#A8A29E"}}>{r.time} · {r.difficulty}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="card" style={{padding:"20px 24px"}}>
             {[[t.cart.sub,`€${subtotal.toFixed(2)}`],[t.cart.del,isFree?t.cart.free:`€${deliveryFee.toFixed(2)}`]].map(([l,v],i)=>(
               <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #F0EDE8"}}>
@@ -3146,7 +3591,7 @@ function CartV({t,cart,subtotal,deliveryFee,setCart,go,user}) {
 }
 
 /* ─── AUTH ───────────────────────────────────────────────────────────────── */
-function AuthV({t,go,pendingSub}) {
+function AuthV({t,go,pendingSub,pendingALC}) {
   const {login,signup}=useAuth();
   const ta=t.auth;
   const [mode,setMode]=useState("signin");
@@ -3159,7 +3604,7 @@ function AuthV({t,go,pendingSub}) {
       setLoading(false);
       if(mode==="signin"){ if(!login(email,pw)){setErr(ta.error);return;} }
       else{ if(!signup(email,pw,name)){setErr(ta.errorExists);return;} }
-      if(pendingSub) go("schedule"); else go("dash");
+      if(pendingSub||pendingALC) go("schedule"); else go("dash");
     },600);
   }
   return(
@@ -3192,15 +3637,39 @@ function AuthV({t,go,pendingSub}) {
 }
 
 /* ─── CHECKOUT ───────────────────────────────────────────────────────────── */
-function CoV({t,cart,subtotal,deliveryFee,place,done,go,user}) {
+function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder}) {
   const tc=t.co; const hasSub=cart.some(i=>i.isMonthly); const grand=subtotal+deliveryFee;
   if(!user){ go("auth"); return null; }
+  if(cart.length===0 && !done){ go("cart"); return null; }
   if(done) return(
-    <div style={{padding:"100px 5%",textAlign:"center",maxWidth:440,margin:"0 auto"}}>
+    <div style={{padding:"100px 5%",textAlign:"center",maxWidth:480,margin:"0 auto"}}>
       <div style={{width:64,height:64,borderRadius:"50%",background:"#EFF6EC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 24px"}}>✓</div>
       <h1 className="serif up" style={{fontSize:40,fontWeight:700,letterSpacing:"-.03em",marginBottom:10}}>{tc.ok}</h1>
-      <p className="up d1" style={{fontSize:15,color:"#78716C",marginBottom:36,lineHeight:1.65}}>{tc.okNote}</p>
-      <div className="up d2" style={{display:"flex",gap:10,justifyContent:"center"}}>
+      <p className="up d1" style={{fontSize:15,color:"#78716C",marginBottom:28,lineHeight:1.65}}>{tc.okNote}</p>
+
+      {lastOrder && (
+        <div className="up d2 card" style={{padding:"18px 20px",marginBottom:28,textAlign:"left"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,paddingBottom:12,borderBottom:"1px solid #EBE7E0"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".06em",textTransform:"uppercase"}}>{lastOrder.id||"Your order"}</div>
+            {lastOrder.day && <div style={{fontSize:12,fontWeight:700,background:"#F5F2EE",padding:"3px 10px",borderRadius:99}}>📅 {lastOrder.day}{lastOrder.time?` · ${lastOrder.time}`:""}</div>}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+            {lastOrder.items.map((it,i)=>(
+              <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:14}}>
+                <span style={{color:"#1C1917"}}>{it.qty>1?`${it.qty}× `:""}{it.name}{it.tierLabel?` · ${it.tierLabel}`:""}{it.isMonthly?" (weekly)":""}</span>
+                <span style={{fontWeight:700,flexShrink:0,marginLeft:10}}>€{(it.price*it.qty).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{borderTop:"1px solid #EBE7E0",paddingTop:12,display:"flex",flexDirection:"column",gap:5}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#78716C"}}><span>Subtotal</span><span>€{lastOrder.subtotal.toFixed(2)}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#78716C"}}><span>Delivery</span><span>{lastOrder.deliveryFee===0?"Free":`€${lastOrder.deliveryFee.toFixed(2)}`}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:16,fontWeight:900,marginTop:4}}><span>Total</span><span>€{lastOrder.total.toFixed(2)}</span></div>
+          </div>
+        </div>
+      )}
+
+      <div className="up d3" style={{display:"flex",gap:10,justifyContent:"center"}}>
         <button className="pb" onClick={()=>go("dash")}>View dashboard</button>
         <button className="ob" onClick={()=>go("home")}>Back home</button>
       </div>
@@ -3251,7 +3720,7 @@ function CoV({t,cart,subtotal,deliveryFee,place,done,go,user}) {
 }
 
 /* ─── DASHBOARD ──────────────────────────────────────────────────────────── */
-function DashV({t,user,go,updateSub}) {
+function DashV({t,user,go,updateSub,reorderSavedBox}) {
   const [cc,setCc]=useState(false);
   const m=t.dash;
   if(!user){ go("auth"); return null; }
@@ -3269,7 +3738,7 @@ function DashV({t,user,go,updateSub}) {
         <button className="ob" onClick={()=>go("boxes")} style={{fontSize:13}}>{m.change} →</button>
       </div>
 
-      {!sub?(
+      {(!sub && !user.orders?.length && !user.upcoming?.length && !user.savedBoxes?.length)?(
         <div className="card up d1" style={{padding:"56px",textAlign:"center"}}>
           <div style={{fontSize:44,opacity:.2,marginBottom:14}}>📦</div>
           <div className="serif" style={{fontSize:26,fontWeight:700,marginBottom:8,color:"#78716C"}}>{m.noSub}</div>
@@ -3278,43 +3747,68 @@ function DashV({t,user,go,updateSub}) {
         </div>
       ):(
         <>
-          {/* Top cards */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}} className="g4r">
-            <div className="card up d1" style={{padding:"22px 24px"}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>{m.subStatus}</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:ss.dot,boxShadow:`0 0 0 3px ${ss.bg}`}}/>
-                {badge(sub.status)}
-              </div>
-              <div className="serif" style={{fontSize:22,fontWeight:700,marginBottom:2}}>{sub.box}</div>
-              <div style={{fontSize:13,color:"#D97950",fontWeight:700,marginBottom:10}}>{sub.tier} · {sub.day} · {sub.time}</div>
-              <div style={{fontSize:30,fontWeight:900}}>€{sub.weeklyPrice}<span style={{fontSize:13,fontWeight:400,color:"#A8A29E"}}>/wk</span></div>
-            </div>
-            <div className="card up d2" style={{padding:"22px 24px"}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>{m.nextDel}</div>
-              <div style={{fontSize:40,marginBottom:8}}>📦</div>
-              <div className="serif" style={{fontSize:20,fontWeight:700,marginBottom:3}}>{user.upcoming?.[0]?.date||"TBD"}</div>
-              <div style={{fontSize:13,color:"#78716C",marginBottom:10}}>{sub.day} · {sub.time==="Morning"?"7:00 – 12:00":"12:00 – 18:00"}</div>
-              {sub.status==="active"&&<div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",background:"#EFF6EC",borderRadius:99,fontSize:12,color:"#3D7A4E",fontWeight:700}}>✓ On track</div>}
-            </div>
-          </div>
-
-          {/* Controls */}
-          {sub.status!=="cancelled"&&(
-            <div className="card up d3" style={{padding:"18px 22px",marginBottom:12}}>
-              <div style={{display:"flex",gap:9,flexWrap:"wrap",alignItems:"center"}}>
-                {sub.status==="active"&&<button className="ob" style={{fontSize:13}} onClick={()=>updateSub({status:"paused"})}>{m.pause}</button>}
-                {sub.status==="paused"&&<button className="pb" style={{fontSize:13}} onClick={()=>updateSub({status:"active"})}>{m.resume}</button>}
-                <button className="ob" style={{fontSize:13}} onClick={()=>go("boxes")}>{m.change}</button>
-                {!cc?(
-                  <button className="rb" style={{marginLeft:"auto"}} onClick={()=>setCc(true)}>{m.cancel}</button>
-                ):(
-                  <div style={{display:"flex",gap:8,alignItems:"center",marginLeft:"auto",flexWrap:"wrap"}}>
-                    <span style={{fontSize:13,color:"#78716C"}}>{m.confirmCancel}</span>
-                    <button className="rb" onClick={()=>{updateSub({status:"cancelled"});setCc(false);}}>{m.yes}</button>
-                    <button className="ob" style={{fontSize:13}} onClick={()=>setCc(false)}>{m.keep}</button>
+          {sub ? (
+            <>
+              {/* Top cards */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}} className="g4r">
+                <div className="card up d1" style={{padding:"22px 24px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>{m.subStatus}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <div style={{width:8,height:8,borderRadius:"50%",background:ss.dot,boxShadow:`0 0 0 3px ${ss.bg}`}}/>
+                    {badge(sub.status)}
                   </div>
-                )}
+                  <div className="serif" style={{fontSize:22,fontWeight:700,marginBottom:2}}>{sub.box}</div>
+                  <div style={{fontSize:13,color:"#D97950",fontWeight:700,marginBottom:10}}>{sub.tier} · {sub.day} · {sub.time}</div>
+                  <div style={{fontSize:30,fontWeight:900}}>€{sub.weeklyPrice}<span style={{fontSize:13,fontWeight:400,color:"#A8A29E"}}>/wk</span></div>
+                </div>
+                <div className="card up d2" style={{padding:"22px 24px"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>{m.nextDel}</div>
+                  <div style={{fontSize:40,marginBottom:8}}>📦</div>
+                  <div className="serif" style={{fontSize:20,fontWeight:700,marginBottom:3}}>{user.upcoming?.[0]?.date||"TBD"}</div>
+                  <div style={{fontSize:13,color:"#78716C",marginBottom:10}}>{sub.day} · {sub.time==="Morning"?"7:00 – 12:00":"12:00 – 18:00"}</div>
+                  {sub.status==="active"&&<div style={{display:"inline-flex",alignItems:"center",gap:5,padding:"4px 12px",background:"#EFF6EC",borderRadius:99,fontSize:12,color:"#3D7A4E",fontWeight:700}}>✓ On track</div>}
+                </div>
+              </div>
+
+              {/* Controls */}
+              {sub.status!=="cancelled"&&(
+                <div className="card up d3" style={{padding:"18px 22px",marginBottom:12}}>
+                  <div style={{display:"flex",gap:9,flexWrap:"wrap",alignItems:"center"}}>
+                    {sub.status==="active"&&<button className="ob" style={{fontSize:13}} onClick={()=>updateSub({status:"paused"})}>{m.pause}</button>}
+                    {sub.status==="paused"&&<button className="pb" style={{fontSize:13}} onClick={()=>updateSub({status:"active"})}>{m.resume}</button>}
+                    <button className="ob" style={{fontSize:13}} onClick={()=>go("boxes")}>{m.change}</button>
+                    {!cc?(
+                      <button className="rb" style={{marginLeft:"auto"}} onClick={()=>setCc(true)}>{m.cancel}</button>
+                    ):(
+                      <div style={{display:"flex",gap:8,alignItems:"center",marginLeft:"auto",flexWrap:"wrap"}}>
+                        <span style={{fontSize:13,color:"#78716C"}}>{m.confirmCancel}</span>
+                        <button className="rb" onClick={()=>{updateSub({status:"cancelled"});setCc(false);}}>{m.yes}</button>
+                        <button className="ob" style={{fontSize:13}} onClick={()=>setCc(false)}>{m.keep}</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          ):(
+            <div className="card up d1" style={{padding:"22px 24px",marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
+              <div style={{fontSize:14,color:"#78716C"}}>{m.noSubNote}</div>
+              <button className="ob" style={{fontSize:13}} onClick={()=>go("boxes")}>{m.browse}</button>
+            </div>
+          )}
+
+          {/* Saved boxes — reorder a Build-Your-Own-Box in one tap */}
+          {user.savedBoxes?.length>0 && (
+            <div className="up d4" style={{marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>🧺 Your saved boxes</div>
+              <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+                {user.savedBoxes.map(sbx=>(
+                  <div key={sbx.id} className="card" style={{flexShrink:0,minWidth:200,padding:"14px 16px"}}>
+                    <div style={{fontSize:14,fontWeight:700,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sbx.name}</div>
+                    <div style={{fontSize:12,color:"#A8A29E",marginBottom:10}}>{sbx.items.reduce((n,i)=>n+i.qty,0)} items · €{sbx.total.toFixed(2)}</div>
+                    <button className="pb" style={{width:"100%",padding:"7px 10px",fontSize:12}} onClick={()=>reorderSavedBox(sbx)}>🔁 Reorder</button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -3328,9 +3822,9 @@ function DashV({t,user,go,updateSub}) {
                   <div key={o.id} className="card" style={{padding:"13px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
                       <div style={{width:34,height:34,borderRadius:8,background:"#F5F2EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📦</div>
-                      <div><div style={{fontSize:14,fontWeight:700}}>{o.box} · {o.tier||sub.tier}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.date} · {o.day} · {o.time}</div></div>
+                      <div><div style={{fontSize:14,fontWeight:700}}>{o.box}{o.tier?` · ${o.tier}`:""}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.date} · {o.day}{o.time?` · ${o.time}`:""}</div></div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>{badge(o.status)}<span style={{fontSize:13,fontWeight:900}}>€{sub.weeklyPrice.toFixed(2)}</span></div>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>{badge(o.status)}</div>
                   </div>
                 ))}
               </div>
@@ -3346,7 +3840,7 @@ function DashV({t,user,go,updateSub}) {
                   <div key={o.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 18px",borderBottom:i<user.orders.length-1?"1px solid #F5F2EE":"none",gap:12}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
                       <div style={{fontSize:18}}>✓</div>
-                      <div><div style={{fontSize:14,fontWeight:700}}>{o.box} · {o.tier}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.id} · {o.date} · {o.day}</div></div>
+                      <div><div style={{fontSize:14,fontWeight:700}}>{o.box}{o.tier?` · ${o.tier}`:""}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.id} · {o.date} · {o.day}</div></div>
                     </div>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>{badge(o.status)}<span style={{fontSize:14,fontWeight:900}}>€{o.total.toFixed(2)}</span></div>
                   </div>
@@ -3477,6 +3971,32 @@ ALL_RECIPES.bull.push(
 ALL_RECIPES.crown.push(
   { id:"a9", cuisine:"classic", name:"Portuguese-Style BBQ Platter", emoji:"🇵🇹", time:"50 min", servings:6, difficulty:"Medium", tag:"chicken + lamb", desc:"Piri-piri chicken, grilled beef and lamb chops — a celebration on a board.", ingredients:["Whole chicken, spatchcocked","Lamb chops","Beef sirloin","Piri-piri sauce: chillies, lemon, garlic, olive oil","Fresh coriander","Grilled bread"], steps:[{title:"Piri-piri sauce",desc:"Blend red chillies, garlic, lemon juice, olive oil and salt. Taste — it should be punchy."},{title:"Marinate chicken",desc:"Coat spatchcocked chicken in piri-piri. Marinate 2 hours minimum."},{title:"Grill chicken",desc:"Grill on indirect heat 35 min, finishing 5 min on direct heat. Char is essential."},{title:"Grill beef and lamb",desc:"Season simply. Grill sirloin 3 min per side, lamb chops 3 min per side."},{title:"Board",desc:"Slice everything and arrange on a large board. Drizzle extra piri-piri. Scatter fresh coriander."}], tip:"Good piri-piri should make you sweat a little — don't hold back on the chillies." },
   { id:"a10", cuisine:"arabic", name:"Levantine Mezze Feast", emoji:"🫙", time:"1h", servings:8, difficulty:"Easy", tag:"everything", desc:"A spread of small dishes centered around different meats — the social meal.", ingredients:["Chicken filets for shawarma","Lamb mince for kofta","Beef for fatteh","Hummus, tabbouleh, fattoush (bought or homemade)","Flatbread","Garlic sauce, tahini, pickles"], steps:[{title:"Prep chicken",desc:"Marinate chicken in shawarma spices. Grill and slice."},{title:"Kofta",desc:"Mix lamb mince with onion, parsley, cumin, cinnamon. Shape onto skewers. Grill."},{title:"Fatteh",desc:"Fry cubed beef mince, season. Layer toasted bread, beef, yogurt and chickpeas."},{title:"Arrange",desc:"Set everything out on small dishes across the table."},{title:"Eat",desc:"Mezze is communal — everyone picks and shares. Serve with flatbread."}], tip:"Mezze is designed to be slow and social. Set it all out, sit down, and take your time." }
+);
+
+/* ─── REGIONAL RECIPES — Portuguese, Bosnian, Luxembourgish, Indian, Pakistani ─ */
+ALL_RECIPES.flock.push(
+  { id:"f13", cuisine:"portuguese", name:"Frango Piri-Piri (Portuguese Grilled Chicken)", emoji:"🇵🇹", time:"45 min", servings:4, difficulty:"Easy", tag:"whole chicken", desc:"The dish that made Portuguese chicken famous worldwide. Fiery, garlicky, unforgettable.", ingredients:["1 whole chicken, spatchcocked","6 red piri-piri or bird's eye chillies","6 garlic cloves","Juice of 2 lemons","4 tbsp olive oil","1 tbsp paprika","1 tsp oregano","Salt"], steps:[{title:"Sauce",desc:"Blend chillies, garlic, lemon, oil, paprika, oregano and salt into a smooth marinade."},{title:"Marinate",desc:"Coat chicken fully, inside and out. Marinate minimum 4 hours, overnight is best."},{title:"Grill",desc:"Grill skin-side down on medium heat 20 min, then flip and cook 20 min more."},{title:"Baste",desc:"Brush with extra sauce every 10 minutes for a sticky, charred finish."},{title:"Serve",desc:"Rest 5 min. Serve with fries and a simple green salad."}], tip:"Piri-piri sauce improves after a day in the fridge — make double and keep some back for basting." },
+  { id:"f14", cuisine:"indian", name:"Chicken Korma", emoji:"🥥", time:"40 min", servings:4, difficulty:"Medium", tag:"chicken filets", desc:"Rich, creamy and gently spiced — the mild curry that wins over everyone at the table.", ingredients:["500g chicken filets, cubed","200ml coconut milk or cream","2 onions, sliced","3 garlic cloves","2cm ginger","2 tsp garam masala","1 tsp turmeric","Handful cashews, ground","Ghee"], steps:[{title:"Onion base",desc:"Fry onions in ghee 10 min until soft and golden. Blend with garlic and ginger into a paste."},{title:"Spice",desc:"Return paste to pan. Add turmeric and garam masala. Cook 2 min until fragrant."},{title:"Chicken",desc:"Add chicken. Cook 8 min, stirring, until sealed on all sides."},{title:"Simmer",desc:"Add coconut milk and ground cashews. Simmer 15 min until chicken is tender and sauce thickens."},{title:"Finish",desc:"Taste and adjust salt. Serve with rice or naan."}], tip:"Ground cashews are the traditional thickener that gives korma its silky texture." },
+  { id:"f15", cuisine:"pakistani", name:"Chicken Karahi", emoji:"🍅", time:"35 min", servings:4, difficulty:"Medium", tag:"chicken filets", desc:"Pakistan's beloved wok-cooked chicken curry — tomato-rich, ginger-forward, restaurant-style at home.", ingredients:["800g chicken pieces on the bone","4 tomatoes, chopped","4 green chillies, slit","2 tbsp ginger, julienned","4 garlic cloves","1 tsp cumin seeds","1 tsp red chilli powder","1 tsp coriander powder","Fresh coriander","Oil or ghee"], steps:[{title:"Sear chicken",desc:"Fry chicken pieces in hot oil in a karahi or wok until sealed, about 8 min."},{title:"Aromatics",desc:"Add garlic and half the ginger. Cook 2 min. Add all dry spices."},{title:"Tomatoes",desc:"Add chopped tomatoes. Cook uncovered on high heat, mashing occasionally, 12–15 min until oil separates."},{title:"Reduce",desc:"The sauce should cling to the chicken, not be soupy — keep cooking on high heat if too wet."},{title:"Finish",desc:"Top with remaining ginger, green chillies and coriander. Serve with naan."}], tip:"True karahi has almost no added water — the tomatoes and chicken create all the sauce." },
+  { id:"f16", cuisine:"bosnian", name:"Bosanski Pilav (Bosnian Chicken Pilaf)", emoji:"🍚", time:"50 min", servings:4, difficulty:"Easy", tag:"chicken filets", desc:"A comforting Balkan rice dish, chicken and rice slow-simmered together in one pot.", ingredients:["500g chicken pieces","300g long-grain rice","1 onion, diced","1 carrot, grated","2 tbsp tomato paste","500ml chicken stock","1 tsp paprika","Bay leaf","Oil"], steps:[{title:"Brown chicken",desc:"Brown chicken pieces in oil in a heavy pot. Remove and set aside."},{title:"Vegetables",desc:"Fry onion and carrot in the same pot 8 min until soft. Add tomato paste and paprika."},{title:"Combine",desc:"Return chicken to pot. Add rice, stock and bay leaf. Stir once."},{title:"Simmer",desc:"Cover and simmer on low heat 25 min without stirring — this keeps the rice fluffy."},{title:"Rest",desc:"Rest off heat, covered, 5 min before serving."}], tip:"Resist stirring while the rice cooks — it's the secret to a pilaf that isn't mushy." }
+);
+ALL_RECIPES.riot.push(
+  { id:"r13", cuisine:"bosnian", name:"Ćevapi with Somun", emoji:"🥙", time:"40 min", servings:4, difficulty:"Easy", tag:"minced beef", desc:"The Balkans' most iconic street food — grilled minced meat sausages in soft flatbread.", ingredients:["500g minced beef","200g minced lamb","1 onion, grated and squeezed dry","1 tsp baking soda","Salt and black pepper","Somun or pitta bread","Raw onion, kajmak or sour cream to serve"], steps:[{title:"Mix",desc:"Combine beef, lamb, onion, baking soda, salt and pepper. Knead vigorously 5 min until it binds together."},{title:"Rest",desc:"Refrigerate the mixture at least 2 hours — this firms up the texture."},{title:"Shape",desc:"Roll into small finger-length sausages, about 8cm long, with wet hands."},{title:"Grill",desc:"Grill on high heat, turning often, 8–10 min until well charred outside."},{title:"Serve",desc:"Stuff warm somun with ćevapi, raw diced onion and a generous spoon of kajmak or sour cream."}], tip:"The baking soda is the Balkan secret — it keeps ćevapi light and tender, never dense." },
+  { id:"r14", cuisine:"pakistani", name:"Lamb Seekh Kebab", emoji:"🍢", time:"35 min", servings:4, difficulty:"Medium", tag:"lamb chops", desc:"Spiced minced lamb moulded onto skewers and grilled over charcoal — a Pakistani BBQ essential.", ingredients:["600g minced lamb","1 onion, finely grated","3 garlic cloves","2cm ginger, grated","2 green chillies, minced","1 tsp garam masala","1 tsp cumin powder","Fresh coriander and mint, chopped","1 egg (binder)"], steps:[{title:"Mix",desc:"Combine all ingredients thoroughly by hand. The mixture should feel slightly sticky."},{title:"Rest",desc:"Refrigerate 1 hour — this makes shaping onto skewers much easier."},{title:"Shape",desc:"Wet hands, mould mixture around flat metal skewers into long sausages, pressing firmly."},{title:"Grill",desc:"Grill over medium-high heat, turning regularly, 10–12 min until charred and cooked through."},{title:"Serve",desc:"Serve with mint chutney, sliced onion and naan."}], tip:"Flat skewers (not round) stop the kebab from spinning and falling apart on the grill." },
+  { id:"r15", cuisine:"pakistani", name:"Lamb Karahi", emoji:"🌶️", time:"1h", servings:4, difficulty:"Medium", tag:"lamb shoulder", desc:"Bone-in lamb cooked fast and hot in a tomato-ginger base — deeply savoury, restaurant favourite.", ingredients:["800g lamb shoulder, bone-in, cubed","4 tomatoes, chopped","2 tbsp ginger, julienned","5 garlic cloves","4 green chillies","1 tsp red chilli powder","1 tsp coriander powder","½ tsp turmeric","Ghee or oil","Fresh coriander"], steps:[{title:"Sear lamb",desc:"Brown lamb pieces in hot ghee in a karahi or heavy pot, about 10 min."},{title:"Aromatics",desc:"Add garlic and half the ginger. Add all dry spices. Cook 2 min."},{title:"Tomatoes and simmer",desc:"Add tomatoes. Cover and simmer on medium-low 35–40 min until lamb is tender, stirring occasionally."},{title:"Reduce",desc:"Uncover, raise heat and cook off excess liquid until the sauce clings to the meat."},{title:"Finish",desc:"Top with remaining ginger, green chillies and coriander. Serve with roti."}], tip:"Bone-in lamb gives karahi its depth of flavour — don't substitute boneless if you can help it." },
+  { id:"r16", cuisine:"portuguese", name:"Espetada (Portuguese Beef Skewers)", emoji:"🔥", time:"30 min", servings:4, difficulty:"Easy", tag:"beef sirloin", desc:"Madeira's famous garlic-studded beef skewers, traditionally grilled over an open fire.", ingredients:["600g beef sirloin, cubed large","8 garlic cloves, halved","2 bay leaves, torn","3 tbsp olive oil","Coarse sea salt","Black pepper"], steps:[{title:"Marinate",desc:"Toss beef cubes with garlic, bay leaves, olive oil, salt and pepper. Marinate 2 hours minimum."},{title:"Skewer",desc:"Thread beef and garlic pieces alternately onto skewers — traditionally bay laurel branches."},{title:"Grill",desc:"Grill on high heat 8–10 min total, turning every 2 min for even charring."},{title:"Rest",desc:"Rest 3 min off the heat."},{title:"Serve",desc:"Serve with Portuguese cornbread (bolo do caco) or fries, and a glass of red wine."}], tip:"The garlic pieces char and soften into something sweet — don't skip them, eat them." }
+);
+ALL_RECIPES.bull.push(
+  { id:"b13", cuisine:"luxembourg", name:"Luxembourgish Beef Goulash", emoji:"🥘", time:"2h", servings:6, difficulty:"Medium", tag:"slow-cook beef", desc:"A hearty Luxembourgish take on the Central European classic — rich, paprika-deep and made for cold evenings.", ingredients:["800g stewing beef, cubed","3 onions, sliced","2 tbsp sweet paprika","1 tbsp tomato paste","500ml beef stock","2 bay leaves","1 tbsp flour","Butter or oil","Boiled potatoes to serve"], steps:[{title:"Onions",desc:"Cook sliced onions in butter on low heat 15 min until deeply softened and golden."},{title:"Brown beef",desc:"Add beef in batches, browning well on all sides."},{title:"Spice",desc:"Stir in paprika and tomato paste. Cook 2 min. Dust with flour and stir."},{title:"Braise",desc:"Add stock and bay leaves. Cover and simmer very gently 1.5 hours until beef is fork-tender."},{title:"Serve",desc:"Serve over boiled potatoes with a dollop of sour cream."}], tip:"Low and slow is non-negotiable here — rushing the braise gives tough, dry beef." },
+  { id:"b14", cuisine:"pakistani", name:"Beef Nihari", emoji:"🍲", time:"3h", servings:6, difficulty:"Advanced", tag:"beef shin", desc:"The legendary slow-cooked Pakistani stew, traditionally simmered overnight for breakfast. Deep, dark and unforgettable.", ingredients:["1kg beef shin with bone","4 tbsp nihari masala (or homemade blend: coriander, fennel, ginger powder, chilli)","3 tbsp flour, toasted until brown","4 tbsp ghee","1 onion, sliced","Ginger and garlic paste","Fresh ginger, coriander, green chilli, lemon to garnish"], steps:[{title:"Sear",desc:"Brown beef shin in ghee with onion until deeply coloured, about 15 min."},{title:"Spice",desc:"Add ginger-garlic paste and nihari masala. Cook 3 min until fragrant."},{title:"Slow cook",desc:"Add water to cover generously. Cover and simmer on very low heat 2.5–3 hours until beef falls apart."},{title:"Thicken",desc:"Whisk toasted flour with a little water into a slurry. Stir into the stew to thicken."},{title:"Serve",desc:"Simmer 10 more minutes. Garnish with ginger, coriander, chilli and lemon. Serve with naan."}], tip:"Toasting the flour until deep brown before adding is what gives nihari its characteristic dark colour and nutty depth." },
+  { id:"b15", cuisine:"pakistani", name:"Chapli Kebab", emoji:"🫓", time:"30 min", servings:4, difficulty:"Easy", tag:"minced beef", desc:"Peshawar's famous flat, crispy-edged minced beef patties, packed with pomegranate seeds and coriander.", ingredients:["600g minced beef","1 onion, finely chopped","2 tomatoes, deseeded and finely chopped","2 green chillies, minced","1 tbsp dried pomegranate seeds (anardana), crushed","1 tsp coriander seeds, crushed","1 egg","2 tbsp cornflour","Fresh coriander"], steps:[{title:"Mix",desc:"Combine all ingredients by hand until well distributed — don't overwork the mince."},{title:"Rest",desc:"Refrigerate 20 min so the patties hold together better when frying."},{title:"Shape",desc:"Form into wide, flat patties about 1cm thick — chapli means \"flat\" in Pashto."},{title:"Fry",desc:"Fry in a generously oiled pan on medium heat 5–6 min per side until deeply golden and crisp-edged."},{title:"Serve",desc:"Serve hot with naan, raw onion rings and a wedge of lemon."}], tip:"The tomato and onion should be very finely chopped, almost mushy — this keeps the patties tender inside." },
+  { id:"b16", cuisine:"portuguese", name:"Bife à Café (Portuguese Coffee-Butter Steak)", emoji:"☕", time:"20 min", servings:2, difficulty:"Easy", tag:"beef sirloin", desc:"Lisbon café classic — a thin steak in a glossy butter, garlic and coffee sauce. Sounds strange, tastes incredible.", ingredients:["2 thin beef sirloin steaks","3 garlic cloves, sliced","3 tbsp butter","100ml strong black coffee (espresso works)","1 tbsp Dijon mustard","Splash of white wine or beer","Salt and pepper","Fries to serve"], steps:[{title:"Season",desc:"Season steaks generously with salt and pepper."},{title:"Sear",desc:"Sear steaks hard and fast in a hot pan, 2 min per side for thin cuts. Remove and rest."},{title:"Sauce",desc:"In the same pan, fry garlic in butter 1 min. Add coffee, mustard and wine. Simmer 3 min to reduce slightly."},{title:"Combine",desc:"Return steaks to the pan briefly to coat in sauce."},{title:"Serve",desc:"Plate with plenty of sauce poured over and a mountain of fries."}], tip:"Don't skip the coffee thinking it'll taste bitter — it mellows into a deep, savoury backbone for the sauce." }
+);
+ALL_RECIPES.crown.push(
+  { id:"a11", cuisine:"bosnian", name:"Bosanski Lonac (Bosnian Mixed Meat Pot)", emoji:"🍯", time:"2h 30min", servings:6, difficulty:"Medium", tag:"everything", desc:"Bosnia's national one-pot dish — layers of beef, lamb and vegetables slow-cooked together in a clay pot.", ingredients:["300g beef, cubed","300g lamb shoulder, cubed","2 potatoes, chunked","2 carrots, chunked","1 cabbage, quartered","2 onions, sliced","2 bay leaves","Whole peppercorns","Fresh parsley"], steps:[{title:"Layer",desc:"In a heavy pot, layer meat and vegetables alternately — meat, onion, potato, carrot, cabbage, repeat."},{title:"Season",desc:"Add bay leaves, peppercorns and salt between layers. Do not stir once layered."},{title:"Cover with water",desc:"Add water just to cover the top layer."},{title:"Slow cook",desc:"Cover tightly and simmer on very low heat 2–2.5 hours without stirring."},{title:"Serve",desc:"Serve straight from the pot, scattered with fresh parsley and crusty bread on the side."}], tip:"The magic of lonac is patience — resist the urge to stir. The layers cook into each other on their own." },
+  { id:"a12", cuisine:"luxembourg", name:"Luxembourg Mixed Grill Assiette", emoji:"🍽️", time:"40 min", servings:4, difficulty:"Easy", tag:"chicken + beef + lamb", desc:"A generous Luxembourgish-style grilled platter — simple seasoning, quality meat, classic bistro comfort.", ingredients:["4 chicken thighs","4 lamb chops","400g beef sirloin","3 tbsp mustard","2 tbsp herbes de Provence","Olive oil","Salt and pepper","Grilled tomatoes and green beans to serve"], steps:[{title:"Season",desc:"Rub all meats with olive oil, mustard, herbes de Provence, salt and pepper."},{title:"Rest",desc:"Let meats come to room temperature, about 20 min, while you heat the grill."},{title:"Grill chicken first",desc:"Chicken thighs take longest — grill 6–7 min per side until fully cooked."},{title:"Grill lamb and beef",desc:"Grill lamb chops and beef sirloin 3–4 min per side for medium."},{title:"Plate",desc:"Arrange all meats on a large platter with grilled tomatoes and green beans."}], tip:"Staggering the grill times means everything finishes and rests together — plan the chicken first." },
+  { id:"a13", cuisine:"pakistani", name:"Pakistani Mixed Grill Platter", emoji:"🍢", time:"1h", servings:6, difficulty:"Medium", tag:"chicken + beef + lamb", desc:"Seekh kebab, chicken tikka and lamb chops together on one smoky, spiced platter — a Pakistani BBQ favourite.", ingredients:["400g minced beef (for seekh)","500g chicken thighs, cubed","4 lamb chops","Yogurt, ginger-garlic paste, garam masala, chilli powder, cumin for marinades","Lemon, onion rings, mint chutney to serve"], steps:[{title:"Marinate chicken",desc:"Coat chicken cubes in yogurt, ginger-garlic, garam masala and chilli. Marinate 2 hours."},{title:"Season lamb",desc:"Rub lamb chops with garlic, cumin, chilli powder and a little oil."},{title:"Shape seekh",desc:"Mix minced beef with ginger, garlic, chilli and coriander. Mould onto skewers."},{title:"Grill everything",desc:"Grill chicken skewers, lamb chops and seekh kebabs, turning regularly, 10–15 min total until charred and cooked through."},{title:"Serve",desc:"Arrange on a large platter with lemon wedges, onion rings and mint chutney."}], tip:"Stagger the grill so everything reaches the table hot together — chicken and seekh cook at similar speeds, start lamb chops slightly earlier." },
+  { id:"a14", cuisine:"indian", name:"Indian Tandoori Mixed Grill", emoji:"🔥", time:"1h", servings:6, difficulty:"Medium", tag:"chicken + lamb", desc:"Classic tandoori chicken and lamb chops, char-grilled with a smoky yogurt marinade — restaurant tandoor flavour at home.", ingredients:["4 chicken drumsticks","4 lamb chops","300g thick yogurt","2 tbsp tandoori masala","1 tbsp ginger-garlic paste","1 tsp red chilli powder","Juice of 1 lemon","Mustard oil or vegetable oil"], steps:[{title:"First marinade",desc:"Rub chicken and lamb with lemon juice, salt and a little chilli powder. Set 20 min."},{title:"Second marinade",desc:"Mix yogurt, tandoori masala, ginger-garlic paste and oil. Coat meats thoroughly. Marinate at least 4 hours, ideally overnight."},{title:"Preheat",desc:"Get your grill or oven very hot — tandoori needs high heat to char properly."},{title:"Grill",desc:"Grill chicken 20–25 min and lamb chops 8–10 min, turning occasionally, basting with leftover marinade."},{title:"Serve",desc:"Char slightly more directly over flame at the end if possible. Serve with mint chutney and sliced onion."}], tip:"The double marinade — acid first, then yogurt-spice — is the real tandoori technique and makes a noticeable difference." }
 );
 
 /* ─── ALL RECIPES VIEW ───────────────────────────────────────────────────── */
