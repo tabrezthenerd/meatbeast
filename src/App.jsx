@@ -2652,6 +2652,9 @@ export default function App() {
             .card{border-radius:12px}
             .tier-btn{padding:10px 12px}
             button[aria-label="Menu"]{display:flex!important}
+            .halal-float{padding:9px 5px!important}
+            .halal-float span:first-child{font-size:13px!important}
+            .halal-float span:last-child{font-size:7px!important}
           }
           @media(max-width:400px){
             .g4r{grid-template-columns:1fr!important}
@@ -2663,6 +2666,24 @@ export default function App() {
         `}</style>
 
         <Nav t={t} lang={lang} setLang={setLang} view={view} go={go} qty={qty} user={user} logout={logout}/>
+
+        {/* Floating halal badge — fixed to the side, visible while scrolling */}
+        <button
+          onClick={()=>go("certifications")}
+          aria-label="View halal certifications"
+          className="halal-float"
+          style={{
+            position:"fixed", top:"50%", transform:"translateY(-50%)",
+            [isRTL?"left":"right"]:0,
+            zIndex:35, background:"#1C1917", color:"#F9F7F4",
+            border:"none", borderRadius:isRTL?"0 10px 10px 0":"10px 0 0 10px",
+            padding:"14px 8px", cursor:"pointer",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+            boxShadow:"-2px 2px 12px rgba(0,0,0,.15)", fontFamily:"'Outfit',sans-serif"
+          }}>
+          <span style={{fontSize:16}}>☪</span>
+          <span style={{fontSize:9,fontWeight:700,letterSpacing:".08em",writingMode:"vertical-rl",textOrientation:"mixed",transform:"rotate(180deg)"}}>HALAL CERTIFIED</span>
+        </button>
 
         {view==="home"      && <HomeV t={t} go={go} openRecipe={openRecipe} lang={lang}/>}
         {view==="certifications" && <CertificationsV go={go} lang={lang}/>}
