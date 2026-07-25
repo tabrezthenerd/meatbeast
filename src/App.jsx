@@ -16,6 +16,17 @@ const CUISINES = [
 const DIFF_COLOR = { Easy:"#3D7A4E", Medium:"#D97950", Advanced:"#C0392B" };
 const DIFF_BG    = { Easy:"#EFF6EC",  Medium:"#FEF5EE", Advanced:"#FEF0EE" };
 
+/* ─── Halal certifications — sourced from Nash SARL's supplier network ────────
+   Each entry backs a real, verifiable certificate. Kept in one place so the
+   whole site can reference a single "View certifications" link instead of
+   repeating badges and claims across multiple pages. ───────────────────────── */
+const HALAL_CERTS = [
+  { id:1, company:"Roche4Abatt SA", role:"Cattle · Beef & Veal", location:"Rochefort, Belgium", issuer:"Halal Expertise — European Research Centre for Halal Industry", certNo:"R4AB250915", approval:"FASFC / AFSCA EC165", pdfPath:"/certificates/roche4abatt-beef-veal.pdf", detail:"Cattle slaughtered by hand in accordance with Islamic rites and Walloon animal welfare legislation. Carcasses marked with Halal stamps." },
+  { id:2, company:"Slachthuis Geel NV & Lornoy", role:"Preparation & Processing", location:"Geel, Belgium", issuer:"Halal Quality Control (HQC), The Netherlands", certNo:"HSS/2022/0012 · Doc. 105.105.190", approval:"—", pdfPath:"/certificates/slachthuis-geel-lornoy-processing.pdf", detail:"Halal suitability statement confirming no cross-contamination with impure or forbidden materials during preparation and processing." },
+  { id:3, company:"Euro Quality Lambs Ltd", role:"Lamb", location:"Craven Arms, Shropshire, UK", issuer:"EQL Halal Assurance — in-house Sharia adviser", certNo:"GB 4451", approval:"UK Company Reg. 15457728", pdfPath:"/certificates/euro-quality-lambs-lamb.pdf", detail:"Europe's largest Muslim-owned lamb abattoir. Every carcass stamped with unique halal abattoir mark GB 4451, certified in accordance with Sharia requirements." },
+  { id:4, company:"Pludis N.V.", role:"Chicken — Slaughtering & Production", location:"Bree, Belgium", issuer:"Total Quality Halal Correct Certification (TQHCC)", certNo:"HCC23720724-PLD2025", approval:"BE E4011 · UAE.GSO 2055-2:2015 / OIC-SMIIC 1:2011", pdfPath:"/certificates/pludis-chicken.pdf", detail:"Category C recognition for slaughtering and production of chicken products, certified to international halal standards." },
+];
+
 const ALL_RECIPES = {
   flock: [
     { id:"f1", cuisine:"classic", name:"Roast Whole Chicken", emoji:"🍋", time:"1h 20min", servings:4, difficulty:"Easy", tag:"whole chicken", desc:"The Sunday classic. Crispy skin, juicy meat, unbeatable aroma.", ingredients:["1 whole chicken (1.2–1.5 kg)","3 tbsp olive oil","1 lemon, halved","4 garlic cloves, crushed","Fresh thyme and rosemary","Salt and black pepper"], steps:[{title:"Prep",desc:"Preheat oven to 200°C. Pat chicken dry — dry skin = crispy skin."},{title:"Season",desc:"Rub all over with olive oil, generous salt and pepper. Stuff cavity with lemon, garlic and herbs."},{title:"Roast",desc:"Place breast-side up in a roasting tray. Roast 1h 10min until juices run clear when you pierce the thigh."},{title:"Rest",desc:"Cover loosely with foil. Rest 10 minutes before carving — this keeps it juicy."},{title:"Serve",desc:"Carve and serve with roasting juices poured over. Perfect with roasted potatoes."}], tip:"Rub herb butter under the skin before roasting for next-level flavour." },
@@ -2345,7 +2356,7 @@ const T = {
     dash:{title:"Dashboard",welcome:"Welcome back",subStatus:"Subscription",nextDel:"Next delivery",upcoming:"Upcoming",history:"Order history",status:{active:"Active",paused:"Paused",cancelled:"Cancelled",scheduled:"Scheduled",delivered:"Delivered"},pause:"Pause",resume:"Resume",cancel:"Cancel subscription",change:"Change box",pauseNote:"Skip up to 8 weeks.",cancelNote:"No fees.",confirmCancel:"Stop all deliveries?",yes:"Yes, cancel",keep:"Keep it",noSub:"No active subscription",noSubNote:"Subscribe to a box to manage it here.",browse:"Browse boxes"},
     home:{boxesTitle:"The boxes.",boxesSub:"Four proteins. Three sizes. Every week.",seeAll:"See all boxes →",fromTier:"from Beast Lite",recipeLabel:"Included with every box",recipeTitle1:"Not just meat.",recipeTitle2:"Inspiration too.",recipeSub:"Curated recipes across 10 world cuisines, included free with every box.",browseAll:"Browse all 60+ recipes →",recipesCount:"62 recipes total",ctaTitle:"Farm fresh.",ctaSub:"Every single week.",ctaBody:"Hand-picked cuts, cold-chain delivered. As fresh as a trip to the butcher — without the trip.",ctaBtn:"Start this week →",cookNow:"View recipe →",showingCount:"Showing",recipes:"recipes"},
     cuisines:["All Recipes","Classic","BBQ","Arabic","Indian","Asian"],
-    footer:{note:"Fresh meat, weekly. Luxembourg.",halal:"Halal Certified",links:["FAQ","Delivery","Contact","Privacy"],faqItems:["How does the subscription work?","Can I skip a week?","What is your cancellation policy?","How is the meat packaged?","Is all meat halal certified?"],deliveryItems:["Free delivery on Beast Max & Ultra boxes","€8 delivery fee on Lite & À la Carte orders","Your first box: always free delivery","Delivery 6 days a week","Morning (7–12) or Afternoon (12–18)"],contactItems:["info@meatbeast.lu","Luxembourg City area","+352 691 000 000","Mon–Sat 8:00–18:00","Instagram · Facebook"],privacyItems:["We never sell your data","Payment secured by Stripe","GDPR compliant","Data stored in EU","Cookie preferences"]},
+    footer:{note:"Fresh meat, weekly. Luxembourg.",halal:"View halal certifications →",links:["FAQ","Delivery","Contact","Privacy"],faqItems:["How does the subscription work?","Can I skip a week?","What is your cancellation policy?","How is the meat packaged?","Is all meat halal certified?"],deliveryItems:["Free delivery on Beast Max & Ultra boxes","€8 delivery fee on Lite & À la Carte orders","Your first box: always free delivery","Delivery 6 days a week","Morning (7–12) or Afternoon (12–18)"],contactItems:["info@meatbeast.lu","Luxembourg City area","+352 691 000 000","Mon–Sat 8:00–18:00","Instagram · Facebook"],privacyItems:["We never sell your data","Payment secured by Stripe","GDPR compliant","Data stored in EU","Cookie preferences"]},
   },
   fr:{
     nav:{home:"Accueil",boxes:"Boxes",alacarte:"À la Carte",dash:"Tableau de bord",cart:"Panier",login:"Connexion",logout:"Déconnexion"},
@@ -2360,7 +2371,7 @@ const T = {
     dash:{title:"Tableau de bord",welcome:"Bon retour",subStatus:"Abonnement",nextDel:"Prochaine livraison",upcoming:"À venir",history:"Historique",status:{active:"Actif",paused:"En pause",cancelled:"Annulé",scheduled:"Planifiée",delivered:"Livrée"},pause:"Mettre en pause",resume:"Reprendre",cancel:"Annuler",change:"Changer de box",pauseNote:"Jusqu'à 8 semaines.",cancelNote:"Sans frais.",confirmCancel:"Arrêter toutes les livraisons ?",yes:"Oui, annuler",keep:"Garder",noSub:"Aucun abonnement",noSubNote:"Abonnez-vous à une box.",browse:"Voir les boxes"},
     home:{boxesTitle:"Les boxes.",boxesSub:"Quatre protéines. Trois tailles. Chaque semaine.",seeAll:"Voir toutes les boxes →",fromTier:"à partir de Beast Lite",recipeLabel:"Inclus dans chaque box",recipeTitle1:"Pas que de la viande.",recipeTitle2:"L'inspiration aussi.",recipeSub:"Des recettes soigneusement choisies dans 10 cuisines du monde, incluses gratuitement.",browseAll:"Parcourir les 60+ recettes →",recipesCount:"62 recettes incluses",ctaTitle:"Fraîcheur de ferme.",ctaSub:"Chaque semaine, sans exception.",ctaBody:"Des morceaux triés sur le volet, livrés en chaîne du froid. Aussi frais qu'une visite chez le boucher — sans le déplacement.",ctaBtn:"Commencer cette semaine →",cookNow:"Voir la recette →",showingCount:"Résultats",recipes:"recettes"},
     cuisines:["Toutes les recettes","Classique","BBQ","Arabe","Indien","Asiatique"],
-    footer:{note:"Viande fraîche, chaque semaine. Luxembourg.",halal:"Halal Certifié",links:["FAQ","Livraison","Contact","Confidentialité"],faqItems:["Comment fonctionne l'abonnement ?","Puis-je sauter une semaine ?","Quelle est votre politique d'annulation ?","Comment la viande est-elle emballée ?","Toute la viande est-elle halal ?"],deliveryItems:["Livraison gratuite sur Beast Max & Ultra","8€ sur commandes Lite & À la Carte","Première box : livraison toujours gratuite","Livraison 6 jours par semaine","Matin (7h–12h) ou Après-midi (12h–18h)"],contactItems:["info@meatbeast.lu","Ville de Luxembourg","+352 691 000 000","Lun–Sam 8h–18h","Instagram · Facebook"],privacyItems:["Nous ne vendons jamais vos données","Paiement sécurisé par Stripe","Conforme au RGPD","Données stockées dans l'UE","Préférences cookies"]},
+    footer:{note:"Viande fraîche, chaque semaine. Luxembourg.",halal:"Voir nos certifications halal →",links:["FAQ","Livraison","Contact","Confidentialité"],faqItems:["Comment fonctionne l'abonnement ?","Puis-je sauter une semaine ?","Quelle est votre politique d'annulation ?","Comment la viande est-elle emballée ?","Toute la viande est-elle halal ?"],deliveryItems:["Livraison gratuite sur Beast Max & Ultra","8€ sur commandes Lite & À la Carte","Première box : livraison toujours gratuite","Livraison 6 jours par semaine","Matin (7h–12h) ou Après-midi (12h–18h)"],contactItems:["info@meatbeast.lu","Ville de Luxembourg","+352 691 000 000","Lun–Sam 8h–18h","Instagram · Facebook"],privacyItems:["Nous ne vendons jamais vos données","Paiement sécurisé par Stripe","Conforme au RGPD","Données stockées dans l'UE","Préférences cookies"]},
   },
   de:{
     nav:{home:"Start",boxes:"Boxen",alacarte:"À la Carte",dash:"Dashboard",cart:"Warenkorb",login:"Anmelden",logout:"Abmelden"},
@@ -2375,7 +2386,7 @@ const T = {
     dash:{title:"Dashboard",welcome:"Willkommen zurück",subStatus:"Abonnement",nextDel:"Nächste Lieferung",upcoming:"Geplant",history:"Bestellhistorie",status:{active:"Aktiv",paused:"Pausiert",cancelled:"Gekündigt",scheduled:"Geplant",delivered:"Geliefert"},pause:"Pausieren",resume:"Fortsetzen",cancel:"Kündigen",change:"Box wechseln",pauseNote:"Bis 8 Wochen.",cancelNote:"Keine Gebühren.",confirmCancel:"Alle Lieferungen stoppen?",yes:"Ja, kündigen",keep:"Behalten",noSub:"Kein aktives Abo",noSubNote:"Box abonnieren.",browse:"Boxen ansehen"},
     home:{boxesTitle:"Die Boxen.",boxesSub:"Vier Proteine. Drei Größen. Jede Woche.",seeAll:"Alle Boxen ansehen →",fromTier:"ab Beast Lite",recipeLabel:"Jeder Box beigelegt",recipeTitle1:"Nicht nur Fleisch.",recipeTitle2:"Auch Inspiration.",recipeSub:"Ausgewählte Rezepte aus 10 Weltküchen, kostenlos jeder Box beigelegt.",browseAll:"Alle 60+ Rezepte entdecken →",recipesCount:"62 Rezepte dabei",ctaTitle:"Frisch vom Hof.",ctaSub:"Jede Woche. Ohne Ausnahme.",ctaBody:"Handverlesene Cuts, Kühlkettenlieferung. So frisch wie ein Besuch beim Metzger — ohne den Weg.",ctaBtn:"Diese Woche starten →",cookNow:"Rezept ansehen →",showingCount:"Ergebnisse",recipes:"Rezepte"},
     cuisines:["Alle Rezepte","Klassisch","BBQ","Arabisch","Indisch","Asiatisch"],
-    footer:{note:"Frisches Fleisch, wöchentlich. Luxemburg.",halal:"Halal Zertifiziert",links:["FAQ","Lieferung","Kontakt","Datenschutz"],faqItems:["Wie funktioniert das Abonnement?","Kann ich eine Woche überspringen?","Wie ist Ihre Kündigungsrichtlinie?","Wie wird das Fleisch verpackt?","Ist alles Fleisch halal?"],deliveryItems:["Kostenlose Lieferung für Beast Max & Ultra","8€ für Lite & À la Carte Bestellungen","Erste Box: immer kostenlose Lieferung","Lieferung 6 Tage pro Woche","Morgens (7–12) oder Nachmittags (12–18)"],contactItems:["info@meatbeast.lu","Luxemburg-Stadt","+352 691 000 000","Mo–Sa 8:00–18:00","Instagram · Facebook"],privacyItems:["Wir verkaufen Ihre Daten nie","Zahlung gesichert durch Stripe","DSGVO-konform","Daten in der EU gespeichert","Cookie-Einstellungen"]},
+    footer:{note:"Frisches Fleisch, wöchentlich. Luxemburg.",halal:"Halal-Zertifizierungen ansehen →",links:["FAQ","Lieferung","Kontakt","Datenschutz"],faqItems:["Wie funktioniert das Abonnement?","Kann ich eine Woche überspringen?","Wie ist Ihre Kündigungsrichtlinie?","Wie wird das Fleisch verpackt?","Ist alles Fleisch halal?"],deliveryItems:["Kostenlose Lieferung für Beast Max & Ultra","8€ für Lite & À la Carte Bestellungen","Erste Box: immer kostenlose Lieferung","Lieferung 6 Tage pro Woche","Morgens (7–12) oder Nachmittags (12–18)"],contactItems:["info@meatbeast.lu","Luxemburg-Stadt","+352 691 000 000","Mo–Sa 8:00–18:00","Instagram · Facebook"],privacyItems:["Wir verkaufen Ihre Daten nie","Zahlung gesichert durch Stripe","DSGVO-konform","Daten in der EU gespeichert","Cookie-Einstellungen"]},
   },
   lb:{
     nav:{home:"Heem",boxes:"Boxen",alacarte:"À la Carte",dash:"Mäi Kont",cart:"Korf",login:"Aloggen",logout:"Ausloggen"},
@@ -2390,7 +2401,7 @@ const T = {
     dash:{title:"Dashboard",welcome:"Wëllkomm zréck",subStatus:"Abonnement",nextDel:"Nächst Liwwerung",upcoming:"Déi nächst",history:"Bestell-Geschicht",status:{active:"Aktiv",paused:"Pauséiert",cancelled:"Annuléiert",scheduled:"Geplangt",delivered:"Geliwwert"},pause:"Pauséieren",resume:"Weidermaachen",cancel:"Annuléieren",change:"Box wiesselen",pauseNote:"Bis zu 8 Wochen.",cancelNote:"Keng Käschten.",confirmCancel:"All Liwwerungen stoppen?",yes:"Jo, annuléieren",keep:"Behalen",noSub:"Keen aktiven Abonnement",noSubNote:"Abonanéiert Iech fir eng Box.",browse:"Boxen kucken"},
     home:{boxesTitle:"D'Boxen.",boxesSub:"Véier Proteinen. Dräi Gréissten. All Woch.",seeAll:"All Boxen kucken →",fromTier:"ab Beast Lite",recipeLabel:"A jidder Box derbäi",recipeTitle1:"Net nëmmen Fleesch.",recipeTitle2:"Inspiratioun och.",recipeSub:"Kuresch Recetten aus 10 Wëltkichen, gratis a jidder Box.",browseAll:"All 60+ Recetten kucken →",recipesCount:"62 Recetten derbäi",ctaTitle:"Frësch vum Bauerenhaff.",ctaSub:"All Woch, ouni Ausnahm.",ctaBody:"Mat der Hand ausgewielte Stécker, Kälteketten-Liwwerung. Sou frësch wéi e Besuch beim Fleesche — ouni d'Rees.",ctaBtn:"Dës Woch ufänken →",cookNow:"Recett kucken →",showingCount:"Weist",recipes:"Recetten"},
     cuisines:["All Recetten","Klassesch","BBQ","Arabesch","Indesch","Asiatesch"],
-    footer:{note:"Frësch Fleesch, all Woch. Lëtzebuerg.",halal:"Halal Zertifizéiert",links:["FAQ","Liwwerung","Kontakt","Dateschutz"],faqItems:["Wéi fonctionéiert dat Abonnement?","Kann ech eng Woch iwwerspringen?","Wat ass Är Annuléierungspolitik?","Wéi gëtt d'Fleesch verpackt?","Ass all d'Fleesch Halal?"],deliveryItems:["Gratis Liwwerung mat Beast Max & Ultra","8€ mat Lite & À la Carte Bestellungen","Éischt Box: ëmmer gratis Liwwerung","Liwwerung 6 Deeg d'Woch","Moies (7–12) oder Nomëtteg (12–18)"],contactItems:["info@meatbeast.lu","Lëtzebuerg Stad","+352 691 000 000","Méindeg–Samschdeg 8:00–18:00","Instagram · Facebook"],privacyItems:["Mir verkafen Är Donnéeën ni","Bezuelung gesëchert duerch Stripe","GDPR-konform","Donnéeën an der EU gespäichert","Cookie-Astellungen"]},
+    footer:{note:"Frësch Fleesch, all Woch. Lëtzebuerg.",halal:"Halal-Zertifizéierungen kucken →",links:["FAQ","Liwwerung","Kontakt","Dateschutz"],faqItems:["Wéi fonctionéiert dat Abonnement?","Kann ech eng Woch iwwerspringen?","Wat ass Är Annuléierungspolitik?","Wéi gëtt d'Fleesch verpackt?","Ass all d'Fleesch Halal?"],deliveryItems:["Gratis Liwwerung mat Beast Max & Ultra","8€ mat Lite & À la Carte Bestellungen","Éischt Box: ëmmer gratis Liwwerung","Liwwerung 6 Deeg d'Woch","Moies (7–12) oder Nomëtteg (12–18)"],contactItems:["info@meatbeast.lu","Lëtzebuerg Stad","+352 691 000 000","Méindeg–Samschdeg 8:00–18:00","Instagram · Facebook"],privacyItems:["Mir verkafen Är Donnéeën ni","Bezuelung gesëchert duerch Stripe","GDPR-konform","Donnéeën an der EU gespäichert","Cookie-Astellungen"]},
   },
   bs:{
     nav:{home:"Početna",boxes:"Kutije",alacarte:"À la Carte",dash:"Moj račun",cart:"Korpa",login:"Prijava",logout:"Odjava"},
@@ -2405,7 +2416,7 @@ const T = {
     dash:{title:"Nadzorna ploča",welcome:"Dobrodošli nazad",subStatus:"Pretplata",nextDel:"Sljedeća dostava",upcoming:"Nadolazeće",history:"Povijest narudžbi",status:{active:"Aktivna",paused:"Pauzirana",cancelled:"Otkazana",scheduled:"Zakazana",delivered:"Dostavljena"},pause:"Pauziraj",resume:"Nastavi",cancel:"Otkaži",change:"Promijeni kutiju",pauseNote:"Do 8 sedmica.",cancelNote:"Bez naknade.",confirmCancel:"Zaustaviti sve dostave?",yes:"Da, otkaži",keep:"Zadrži",noSub:"Nema aktivne pretplate",noSubNote:"Pretplatite se na kutiju.",browse:"Pogledaj kutije"},
     home:{boxesTitle:"Kutije.",boxesSub:"Četiri proteina. Tri veličine. Svake sedmice.",seeAll:"Pogledaj sve kutije →",fromTier:"od Beast Lite",recipeLabel:"Uključeno u svaku kutiju",recipeTitle1:"Ne samo meso.",recipeTitle2:"I inspiracija.",recipeSub:"Odabrani recepti iz 10 svjetskih kuhinja, gratis uz svaku kutiju.",browseAll:"Pregledaj svih 60+ recepata →",recipesCount:"62 recepata uključeno",ctaTitle:"Svježe s farme.",ctaSub:"Svake sedmice, bez izuzetka.",ctaBody:"Ručno odabrani komadi, dostava hladnim lancem. Svježe kao odlazak kod mesara — bez odlaska.",ctaBtn:"Počnite ovu sedmicu →",cookNow:"Pogledaj recept →",showingCount:"Prikazuje",recipes:"recepata"},
     cuisines:["Svi recepti","Klasično","BBQ","Arapska","Indijska","Azijska"],
-    footer:{note:"Svježe meso, sedmično. Luksemburg.",halal:"Halal certificirano",links:["FAQ","Dostava","Kontakt","Privatnost"],faqItems:["Kako funkcioniše pretplata?","Mogu li preskočiti sedmicu?","Kakva je politika otkazivanja?","Kako se meso pakuje?","Je li sve meso halal?"],deliveryItems:["Besplatna dostava za Beast Max & Ultra","8€ za Lite & À la Carte narudžbe","Prva kutija: uvijek besplatna dostava","Dostava 6 dana sedmično","Ujutro (7–12) ili Popodne (12–18)"],contactItems:["info@meatbeast.lu","Luksemburg Grad","+352 691 000 000","Ponedjeljak–Subota 8:00–18:00","Instagram · Facebook"],privacyItems:["Nikad ne prodajemo vaše podatke","Plaćanje sigurno putem Stripea","GDPR usklađeno","Podaci pohranjeni u EU","Postavke kolačića"]},
+    footer:{note:"Svježe meso, sedmično. Luksemburg.",halal:"Pogledaj halal certifikate →",links:["FAQ","Dostava","Kontakt","Privatnost"],faqItems:["Kako funkcioniše pretplata?","Mogu li preskočiti sedmicu?","Kakva je politika otkazivanja?","Kako se meso pakuje?","Je li sve meso halal?"],deliveryItems:["Besplatna dostava za Beast Max & Ultra","8€ za Lite & À la Carte narudžbe","Prva kutija: uvijek besplatna dostava","Dostava 6 dana sedmično","Ujutro (7–12) ili Popodne (12–18)"],contactItems:["info@meatbeast.lu","Luksemburg Grad","+352 691 000 000","Ponedjeljak–Subota 8:00–18:00","Instagram · Facebook"],privacyItems:["Nikad ne prodajemo vaše podatke","Plaćanje sigurno putem Stripea","GDPR usklađeno","Podaci pohranjeni u EU","Postavke kolačića"]},
   },
   pt:{
     nav:{home:"Início",boxes:"Caixas",alacarte:"À la Carte",dash:"Painel",cart:"Carrinho",login:"Entrar",logout:"Sair"},
@@ -2420,7 +2431,7 @@ const T = {
     dash:{title:"Painel",welcome:"Bem-vindo de volta",subStatus:"Subscrição",nextDel:"Próxima entrega",upcoming:"Próximas",history:"Histórico",status:{active:"Activo",paused:"Pausado",cancelled:"Cancelado",scheduled:"Agendado",delivered:"Entregue"},pause:"Pausar",resume:"Retomar",cancel:"Cancelar subscrição",change:"Mudar caixa",pauseNote:"Até 8 semanas.",cancelNote:"Sem taxas.",confirmCancel:"Parar todas as entregas?",yes:"Sim, cancelar",keep:"Manter",noSub:"Sem subscrição activa",noSubNote:"Subscreva uma caixa para gerir aqui.",browse:"Ver caixas"},
     home:{boxesTitle:"As caixas.",boxesSub:"Quatro proteínas. Três tamanhos. Cada semana.",seeAll:"Ver todas as caixas →",fromTier:"a partir de Beast Lite",recipeLabel:"Incluído em cada caixa",recipeTitle1:"Não só carne.",recipeTitle2:"Inspiração também.",recipeSub:"Receitas de 10 cozinhas mundiais, incluídas gratuitamente em cada caixa.",browseAll:"Explorar as 60+ receitas →",recipesCount:"62 receitas",ctaTitle:"Fresco da quinta.",ctaSub:"Todas as semanas, sem falhar.",ctaBody:"Cortes selecionados à mão, entrega em cadeia de frio. Tão fresco como uma visita ao talho — sem a deslocação.",ctaBtn:"Começar esta semana →",cookNow:"Ver receita →",showingCount:"A mostrar",recipes:"receitas"},
     cuisines:["Todas as receitas","Clássico","BBQ","Árabe","Indiano","Asiático"],
-    footer:{note:"Carne fresca, semanalmente. Luxemburgo.",halal:"Certificado Halal",links:["FAQ","Entrega","Contacto","Privacidade"],faqItems:["Como funciona a subscrição?","Posso saltar uma semana?","Qual é a política de cancelamento?","Como é embalada a carne?","Toda a carne é halal?"],deliveryItems:["Entrega grátis em Beast Max & Ultra","8€ em pedidos Lite & À la Carte","Primeira caixa: entrega sempre grátis","Entrega 6 dias por semana","Manhã (7–12h) ou Tarde (12–18h)"],contactItems:["info@meatbeast.lu","Cidade do Luxemburgo","+352 691 000 000","Seg–Sáb 8h–18h","Instagram · Facebook"],privacyItems:["Nunca vendemos os seus dados","Pagamento seguro via Stripe","Conformidade RGPD","Dados armazenados na UE","Preferências de cookies"]},
+    footer:{note:"Carne fresca, semanalmente. Luxemburgo.",halal:"Ver certificações halal →",links:["FAQ","Entrega","Contacto","Privacidade"],faqItems:["Como funciona a subscrição?","Posso saltar uma semana?","Qual é a política de cancelamento?","Como é embalada a carne?","Toda a carne é halal?"],deliveryItems:["Entrega grátis em Beast Max & Ultra","8€ em pedidos Lite & À la Carte","Primeira caixa: entrega sempre grátis","Entrega 6 dias por semana","Manhã (7–12h) ou Tarde (12–18h)"],contactItems:["info@meatbeast.lu","Cidade do Luxemburgo","+352 691 000 000","Seg–Sáb 8h–18h","Instagram · Facebook"],privacyItems:["Nunca vendemos os seus dados","Pagamento seguro via Stripe","Conformidade RGPD","Dados armazenados na UE","Preferências de cookies"]},
   },
   ar:{
     nav:{home:"الرئيسية",boxes:"الصناديق",alacarte:"آلا كارت",dash:"لوحتي",cart:"السلة",login:"تسجيل الدخول",logout:"خروج"},
@@ -2435,7 +2446,7 @@ const T = {
     dash:{title:"لوحة التحكم",welcome:"مرحباً بعودتك",subStatus:"الاشتراك",nextDel:"التوصيل القادم",upcoming:"المقبلة",history:"السجل",status:{active:"نشط",paused:"موقوف",cancelled:"ملغى",scheduled:"مجدوَل",delivered:"تم التوصيل"},pause:"إيقاف مؤقت",resume:"استئناف",cancel:"إلغاء الاشتراك",change:"تغيير الصندوق",pauseNote:"حتى 8 أسابيع.",cancelNote:"بدون رسوم.",confirmCancel:"وقف جميع التوصيلات؟",yes:"نعم، إلغاء",keep:"الاحتفاظ",noSub:"لا يوجد اشتراك نشط",noSubNote:"اشترك في صندوق لإدارته هنا.",browse:"تصفّح الصناديق"},
     home:{boxesTitle:"الصناديق.",boxesSub:"أربعة بروتينات. ثلاثة أحجام. كل أسبوع.",seeAll:"عرض جميع الصناديق ←",fromTier:"من Beast Lite",recipeLabel:"مضمّن مع كل صندوق",recipeTitle1:"ليس فقط لحماً.",recipeTitle2:"إلهاماً أيضاً.",recipeSub:"وصفات منتقاة من 10 مطابخ عالمية، مضمّنة مجاناً مع كل صندوق.",browseAll:"تصفّح الـ 60+ وصفة ←",recipesCount:"62 وصفة",ctaTitle:"طازج من المزرعة.",ctaSub:"كل أسبوع، بلا انقطاع.",ctaBody:"قطع مختارة بعناية، توصيل بسلسلة التبريد. طازج كزيارة الجزار — دون الرحلة.",ctaBtn:"ابدأ هذا الأسبوع ←",cookNow:"عرض الوصفة ←",showingCount:"يُظهر",recipes:"وصفة"},
     cuisines:["جميع الوصفات","كلاسيكي","شواء","عربي","هندي","آسيوي"],
-    footer:{note:"لحم طازج أسبوعياً. لوكسمبورغ.",halal:"معتمد حلال",links:["الأسئلة الشائعة","التوصيل","التواصل","الخصوصية"],faqItems:["كيف يعمل الاشتراك؟","هل يمكنني تخطي أسبوع؟","ما سياسة الإلغاء؟","كيف يُعبَّأ اللحم؟","هل اللحم حلال بالكامل؟"],deliveryItems:["توصيل مجاني مع صناديق Max وUltra","8€ مع طلبات Lite وآلا كارت","صندوقك الأول: توصيل مجاني دائماً","التوصيل 6 أيام أسبوعياً","صباحاً (7–12) أو مساءً (12–18)"],contactItems:["info@meatbeast.lu","مدينة لوكسمبورغ","+352 691 000 000","الاثنين–السبت 8:00–18:00","إنستغرام · فيسبوك"],privacyItems:["لا نبيع بياناتك أبداً","الدفع مؤمَّن عبر Stripe","متوافق مع GDPR","البيانات مخزّنة في الاتحاد الأوروبي","تفضيلات ملفات تعريف الارتباط"]},
+    footer:{note:"لحم طازج أسبوعياً. لوكسمبورغ.",halal:"عرض شهادات الحلال ←",links:["الأسئلة الشائعة","التوصيل","التواصل","الخصوصية"],faqItems:["كيف يعمل الاشتراك؟","هل يمكنني تخطي أسبوع؟","ما سياسة الإلغاء؟","كيف يُعبَّأ اللحم؟","هل اللحم حلال بالكامل؟"],deliveryItems:["توصيل مجاني مع صناديق Max وUltra","8€ مع طلبات Lite وآلا كارت","صندوقك الأول: توصيل مجاني دائماً","التوصيل 6 أيام أسبوعياً","صباحاً (7–12) أو مساءً (12–18)"],contactItems:["info@meatbeast.lu","مدينة لوكسمبورغ","+352 691 000 000","الاثنين–السبت 8:00–18:00","إنستغرام · فيسبوك"],privacyItems:["لا نبيع بياناتك أبداً","الدفع مؤمَّن عبر Stripe","متوافق مع GDPR","البيانات مخزّنة في الاتحاد الأوروبي","تفضيلات ملفات تعريف الارتباط"]},
   },
 };
 
@@ -2654,6 +2665,7 @@ export default function App() {
         <Nav t={t} lang={lang} setLang={setLang} view={view} go={go} qty={qty} user={user} logout={logout}/>
 
         {view==="home"      && <HomeV t={t} go={go} openRecipe={openRecipe} lang={lang}/>}
+        {view==="certifications" && <CertificationsV go={go} lang={lang}/>}
         {view==="boxes"     && <BoxesV t={t} go={go} onSelect={onSelectBox} openDetail={openBoxDetail} lang={lang}/>}
         {view==="allrecipes"&& <AllRecipesV go={go} openRecipe={openRecipe} lang={lang}/>}
         {view==="boxdetail" && <BoxDetailV t={t} detail={boxDetail} go={go} onSelect={onSelectBox} openRecipe={openRecipe} lang={lang}/> }
@@ -2677,10 +2689,10 @@ export default function App() {
                   <div style={{fontSize:11,color:"#A8A29E"}}>{t.footer.note}</div>
                 </div>
               </div>
-              {/* Halal badge */}
-              <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"#78716C",background:"#F5F2EE",border:"1px solid #E2DDD6",padding:"5px 12px",borderRadius:99}}>
-                <span>☪</span>{t.footer.halal}
-              </div>
+              {/* Halal — simple link, not a repeated badge (see nav for the one badge) */}
+              <button onClick={()=>go("certifications")} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,fontWeight:600,color:"#A8A29E",textDecoration:"underline",textUnderlineOffset:2,fontFamily:"'Outfit',sans-serif",padding:0}}>
+                {t.footer.halal}
+              </button>
               {/* Footer links — simple pills */}
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {t.footer.links.map((l,i)=>(
@@ -2720,10 +2732,10 @@ function Nav({t,lang,setLang,view,go,qty,user,logout}) {
 
         {/* Right cluster */}
         <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-          {/* Halal badge */}
-          <div className="mob-hide" style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:99,background:"#F5F2EE",border:"1px solid #E2DDD6",fontSize:11,fontWeight:700,color:"#78716C",whiteSpace:"nowrap"}}>
+          {/* Halal badge — links to real certificates */}
+          <button className="mob-hide" onClick={()=>go("certifications")} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:99,background:"#F5F2EE",border:"1px solid #E2DDD6",fontSize:11,fontWeight:700,color:"#78716C",whiteSpace:"nowrap",cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
             <span style={{fontSize:13}}>☪</span> Halal Certified
-          </div>
+          </button>
 
           {/* Language switcher */}
           <div style={{display:"flex",gap:1,background:"#EBE7E0",padding:"3px",borderRadius:8,flexShrink:0}}>
@@ -2763,9 +2775,9 @@ function Nav({t,lang,setLang,view,go,qty,user,logout}) {
           {user&&<button className={`nb${view==="dash"?" on":""}`} style={{textAlign:isRTL?"right":"left",padding:"10px 12px"}} onClick={()=>{go("dash");setMobileOpen(false);}}>{t.nav.dash}</button>}
           {!user&&<button className="pb" style={{marginTop:4,width:"100%"}} onClick={()=>{go("auth");setMobileOpen(false);}}>{t.nav.login}</button>}
           {user&&<button className="nb" onClick={()=>{logout();setMobileOpen(false);}} style={{color:"#A8A29E",textAlign:isRTL?"right":"left",padding:"10px 12px"}}>{t.nav.logout}</button>}
-          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"#78716C"}}>
+          <button className="nb" onClick={()=>{go("certifications");setMobileOpen(false);}} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"#78716C",padding:"6px 4px"}}>
             <span>☪</span> Halal Certified
-          </div>
+          </button>
         </div>
       )}
     </header>
@@ -3082,7 +3094,51 @@ function BoxesV({t,go,onSelect,openDetail,lang}) {
 /* ─── BOX DETAIL + RECIPE WIDGET ─────────────────────────────────────────── */
 
 /* ─── NEW BOX DETAIL with recipe grid ───────────────────────────────────── */
+function CertificationsV({go,lang}){
+  const L = {
+    en:{title:"Our Halal Certifications",sub:"Every supplier in the Meat Beast chain is independently certified. Here is the actual paperwork — not just a badge.",back:"← Back",issuedBy:"Issued by",scope:"Scope",role:"Supplies",viewPdf:"View certificate (PDF)"},
+    fr:{title:"Nos Certifications Halal",sub:"Chaque fournisseur de la chaîne Meat Beast est certifié indépendamment. Voici les documents réels — pas seulement un badge.",back:"← Retour",issuedBy:"Émis par",scope:"Portée",role:"Fournit",viewPdf:"Voir le certificat (PDF)"},
+    de:{title:"Unsere Halal-Zertifizierungen",sub:"Jeder Lieferant in der Meat-Beast-Kette ist unabhängig zertifiziert. Hier sind die echten Unterlagen — nicht nur ein Abzeichen.",back:"← Zurück",issuedBy:"Ausgestellt von",scope:"Umfang",role:"Liefert",viewPdf:"Zertifikat ansehen (PDF)"},
+    pt:{title:"As Nossas Certificações Halal",sub:"Cada fornecedor na cadeia da Meat Beast é certificado de forma independente. Aqui está a documentação real — não apenas um selo.",back:"← Voltar",issuedBy:"Emitido por",scope:"Âmbito",role:"Fornece",viewPdf:"Ver certificado (PDF)"},
+    ar:{title:"شهادات الحلال لدينا",sub:"كل مورّد في سلسلة Meat Beast معتمد بشكل مستقل. إليك المستندات الفعلية — وليس مجرد شارة.",back:"← رجوع",issuedBy:"صادرة عن",scope:"النطاق",role:"يورّد",viewPdf:"عرض الشهادة (PDF)"},
+    lb:{title:"Eis Halal-Zertifizéierungen",sub:"All Fournisseur an der Meat Beast Kette ass onofhängeg zertifizéiert. Hei sinn déi richteg Dokumenter — net nëmmen e Badge.",back:"← Zréck",issuedBy:"Ausgestallt vun",scope:"Ëmfang",role:"Liwwert",viewPdf:"Zertifikat kucken (PDF)"},
+    bs:{title:"Naše Halal Certifikacije",sub:"Svaki dobavljač u Meat Beast lancu je nezavisno certificiran. Ovo su stvarni dokumenti — ne samo značka.",back:"← Nazad",issuedBy:"Izdao",scope:"Opseg",role:"Dostavlja",viewPdf:"Pogledaj certifikat (PDF)"},
+  };
+  const m = L[lang]||L.en;
+  return(
+    <div style={{padding:"52px 5% 96px",maxWidth:840,margin:"0 auto"}}>
+      <button className="ob up" onClick={()=>go("home")} style={{fontSize:13,marginBottom:24}}>{m.back}</button>
+      <h1 className="serif up d1" style={{fontSize:36,fontWeight:700,letterSpacing:"-.03em",marginBottom:8}}>{m.title}</h1>
+      <p className="up d1" style={{fontSize:15,color:"#78716C",lineHeight:1.65,marginBottom:36,maxWidth:560}}>{m.sub}</p>
+
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {HALAL_CERTS.map((c,i)=>(
+          <div key={c.id} className={`card up d${Math.min(i+1,5)}`} style={{padding:"22px 24px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14,flexWrap:"wrap",marginBottom:12}}>
+              <div>
+                <div className="serif" style={{fontSize:19,fontWeight:700,marginBottom:3}}>{c.company}</div>
+                <div style={{fontSize:12,color:"#A8A29E"}}>{c.location}</div>
+              </div>
+              <div style={{background:"#F5F2EE",borderRadius:99,padding:"5px 14px",fontSize:12,fontWeight:700,color:"#1C1917",whiteSpace:"nowrap"}}>{m.role}: {c.role}</div>
+            </div>
+            <p style={{fontSize:13,color:"#78716C",lineHeight:1.6,marginBottom:14}}>{c.detail}</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,fontSize:12,marginBottom:16}} className="g4r">
+              <div><div style={{color:"#A8A29E",marginBottom:2}}>{m.issuedBy}</div><div style={{fontWeight:600,color:"#1C1917"}}>{c.issuer}</div></div>
+              <div><div style={{color:"#A8A29E",marginBottom:2}}>Cert. No.</div><div style={{fontWeight:600,color:"#1C1917"}}>{c.certNo}</div></div>
+              {c.approval!=="—" && <div><div style={{color:"#A8A29E",marginBottom:2}}>Approval</div><div style={{fontWeight:600,color:"#1C1917"}}>{c.approval}</div></div>}
+            </div>
+            <a href={c.pdfPath} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,fontSize:13,fontWeight:700,color:"#D97950",textDecoration:"none"}}>
+              📄 {m.viewPdf}
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BoxDetailV({t,detail,go,onSelect,openRecipe,lang}){
+  const isRTL = lang==="ar";
   const [tier,setTier]=useState(detail?.tierKey||"max");
   const [activeCuisine,setActiveCuisine]=useState("all");
   const [searchQ,setSearchQ]=useState("");
@@ -3938,17 +3994,18 @@ function FooterPageV({page,lang,onClose}){
           </div>
         )}
 
-        <div style={{marginTop:28,padding:"20px 20px",background:"#1C1917",borderRadius:12,display:"flex",alignItems:"center",gap:14}}>
-          <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(217,121,80,.2)",border:"1px solid rgba(217,121,80,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>☪</div>
-          <div>
+        <button onClick={()=>go("certifications")} style={{marginTop:28,padding:"20px 20px",background:"#1C1917",borderRadius:12,display:"flex",alignItems:"center",gap:14,width:"100%",border:"none",cursor:"pointer",textAlign:isRTL?"right":"left",fontFamily:"'Outfit',sans-serif"}}>
+          <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(217,121,80,.2)",border:"1px solid rgba(217,121,80,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>📄</div>
+          <div style={{flex:1}}>
             <div style={{fontSize:14,fontWeight:700,color:"#F9F7F4",marginBottom:3,lineHeight:1.3}}>
-              {lang==="ar"?"حلال معتمد. ليس مجرد ادعاء — بل التزام.":lang==="pt"?"Halal certificado. Não uma promessa — um compromisso.":lang==="fr"?"Halal certifié. Pas une promesse — un engagement.":lang==="de"?"Halal-zertifiziert. Kein Versprechen — ein Bekenntnis.":"Halal certified. Not a label — a commitment."}
+              {lang==="ar"?"حلال معتمد — عرض شهاداتنا الفعلية":lang==="pt"?"Halal certificado — ver as nossas certificações reais":lang==="fr"?"Halal certifié — voir nos certifications réelles":lang==="de"?"Halal-zertifiziert — echte Zertifikate ansehen":lang==="lb"?"Halal zertifizéiert — eis richteg Zertifikater kucken":lang==="bs"?"Halal certificirano — pogledaj naše stvarne certifikate":"Halal certified — view our real certifications"}
             </div>
-            <div style={{fontSize:12,color:"rgba(249,247,244,.45)",lineHeight:1.5}}>
-              {lang==="ar"?"كل قطعة. كل طلبية. كل أسبوع.":lang==="pt"?"Cada corte. Cada pedido. Cada semana.":lang==="fr"?"Chaque coupe. Chaque commande. Chaque semaine.":lang==="lb"?"All Stéck. All Bestellung. All Woch.":lang==="bs"?"Svaki komad. Svaka narudžba. Svake sedmice.":lang==="de"?"Jeder Cut. Jede Bestellung. Jede Woche.":"Every cut. Every order. Every week."}
+            <div style={{fontSize:12,color:"rgba(249,247,244,.45)"}}>
+              {lang==="ar"?"من أربعة موردين معتمدين مستقلين":lang==="pt"?"De quatro fornecedores certificados de forma independente":lang==="fr"?"Auprès de quatre fournisseurs certifiés indépendamment":lang==="de"?"Von vier unabhängig zertifizierten Lieferanten":"From four independently certified suppliers"}
             </div>
           </div>
-        </div>
+          <span style={{color:"#A8A29E",fontSize:18,flexShrink:0}}>{isRTL?"←":"→"}</span>
+        </button>
       </div>
     </div>
   );
