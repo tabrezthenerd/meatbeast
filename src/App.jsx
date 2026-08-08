@@ -1,4 +1,4 @@
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 const AuthCtx = createContext(null);
 const useAuth = () => useContext(AuthCtx);
 
@@ -82,7 +82,146 @@ const BOXES = [
   { key:"bull",  name:"The Bull",    tagline:"Beef. Just beef.",       icon:"🎯", color:"#C0392B", bg:"#FEF2F2", desc:"No distractions. No compromises. Premium dry-aged beef cuts for the serious carnivore.", categories:["Beef Only"], contents:{ lite:["200g ribeye steak","300g minced beef","150g beef tenderloin"], max:["400g ribeye steak","600g minced beef","300g beef tenderloin","300g beef sirloin"], ultra:["800g ribeye steak","1.2 kg minced beef","600g beef tenderloin","600g beef sirloin","400g slow-cook beef"] }, price:{ lite:52, max:96, ultra:172 } },
   { key:"crown", name:"The Crown",  tagline:"The complete box",  icon:"👑", color:"#1C1917", bg:"#F5F2EE", desc:"The whole show — poultry, beef, veal and lamb. Maximum variety, maximum satisfaction.", categories:["Total Assortment"], contents:{ lite:["1 whole chicken","200g beef sirloin","200g veal escalope","2 lamb chops","200g minced beef"], max:["2 whole chickens","400g beef sirloin","400g veal escalope","4 lamb chops","400g minced beef","4 chicken legs","2 lamb chops"], ultra:["3 whole chickens","800g beef sirloin","600g veal escalope","300g veal tenderloin","8 lamb chops","800g minced beef","8 chicken legs","300g beef tenderloin","500g lamb shoulder"] }, price:{ lite:48, max:88, ultra:156 } }];
 const DELIVERY_FREE_THRESHOLD = 70;
+// SEO metadata per page — since this is a client-rendered single-page app
+// (no server-side rendering), title/description tags are updated dynamically
+// as the user navigates rather than being set once in index.html. This gives
+// each page a distinct title in the browser tab and in shared link previews.
+const SEO_META = {
+  home:         { title:"Meat Beast — Halal Meat Delivered Weekly in Luxembourg", desc:"Premium halal cuts, hand-selected and delivered every week across Luxembourg. Subscription boxes, à la carte, and custom boxes." },
+  boxes:        { title:"Subscription Boxes — Meat Beast", desc:"Choose your protein and your tier. Weekly halal meat boxes delivered fresh to your door in Luxembourg." },
+  alacarte:     { title:"À la Carte — Meat Beast", desc:"39 halal cuts of poultry, beef, veal and lamb, ordered individually or built into your own custom box." },
+  allrecipes:   { title:"62 Recipes — Meat Beast", desc:"Recipes from Arabic, Indian, Pakistani, Portuguese, Bosnian and Luxembourgish cuisine, included free with every box." },
+  cart:         { title:"Your Cart — Meat Beast", desc:"Review your order before checkout." },
+  checkout:     { title:"Checkout — Meat Beast", desc:"Secure checkout for your Meat Beast order." },
+  dash:         { title:"Dashboard — Meat Beast", desc:"Manage your subscription, orders and saved boxes." },
+  certifications:{ title:"Halal Certifications — Meat Beast", desc:"Real, verifiable halal certificates from every supplier in the Meat Beast chain." },
+  admin:        { title:"Admin — Meat Beast", desc:"Order management and stock control." },
+  auth:         { title:"Sign In — Meat Beast", desc:"Sign in or create your Meat Beast account." },
+};
+function applySEO(view){
+  const meta = SEO_META[view] || SEO_META.home;
+  try {
+    document.title = meta.title;
+    let tag = document.querySelector('meta[name="description"]');
+    if(!tag){ tag = document.createElement("meta"); tag.setAttribute("name","description"); document.head.appendChild(tag); }
+    tag.setAttribute("content", meta.desc);
+  } catch {}
+}
+// TODO before launch: replace with the real Meat Beast WhatsApp Business number,
+// international format with no + or spaces, e.g. "35262112233"
+const WHATSAPP_NUMBER = "35200000000";
+// TODO before launch: replace with your real GA4 Measurement ID (looks like
+// "G-XXXXXXXXXX"), found in Google Analytics → Admin → Data Streams.
+// Leave as-is and analytics simply won't load — no errors, safe default.
+const GA_MEASUREMENT_ID = "G-XXXXXXXXXX";
+
+function initAnalytics(){
+  if(GA_MEASUREMENT_ID==="G-XXXXXXXXXX") return; // not configured yet
+  try {
+    if(document.getElementById("ga4-script")) return; // already loaded
+    const s1 = document.createElement("script");
+    s1.id = "ga4-script"; s1.async = true;
+    s1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    document.head.appendChild(s1);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    window.gtag("js", new Date());
+    window.gtag("config", GA_MEASUREMENT_ID);
+  } catch {}
+}
+// Fire a tracked event. Safe no-op if analytics isn't configured/loaded —
+// every call site can use this without checking whether GA is present.
+function trackEvent(name, params={}){
+  try { if(window.gtag) window.gtag("event", name, params); } catch {}
+}
+// Delivery zone — matches the coverage already stated in the footer (Luxembourg
+// City, Esch, Differdange, Dudelange, Ettelbruck, Diekirch). Ranges are
+// approximate official Luxembourg postal code bands per commune; refine with
+// the real logistics team before launch if any edge addresses are rejected
+// incorrectly.
+const DELIVERY_ZONES = [
+  { name:"Luxembourg City", min:1009, max:2999 },
+  { name:"Esch-sur-Alzette", min:4001, max:4030 },
+  { name:"Differdange", min:4501, max:4560 },
+  { name:"Dudelange", min:3401, max:3488 },
+  { name:"Ettelbruck", min:9000, max:9099 },
+  { name:"Diekirch", min:9200, max:9250 },
+];
+function inDeliveryZone(zip){
+  const n = parseInt(zip,10);
+  if(isNaN(n)) return false;
+  return DELIVERY_ZONES.some(z => n>=z.min && n<=z.max);
+}
 const DELIVERY_FEE = 8;
+// Deterministic referral code from email — no storage needed, works for
+// every existing account (including the mock demo users) automatically.
+function getReferralCode(email){
+  if(!email) return "";
+  let hash = 0;
+  for(let i=0;i<email.length;i++){ hash = (hash*31 + email.charCodeAt(i)) >>> 0; }
+  return hash.toString(36).toUpperCase().padEnd(6,"0").slice(0,6);
+}
+// Seed reviews — realistic starting content for the reviews feature. In a
+// real backend these would be replaced by genuine customer reviews, ideally
+// gated to verified purchases only.
+const SEED_REVIEWS = [
+  { id:"seed-1", boxKey:"crown", rating:5, comment:"Best halal meat I've had delivered in Luxembourg. The lamb chops were incredible.", customerName:"Yasmin K.", date:"2026-06-12" },
+  { id:"seed-2", boxKey:"crown", rating:5, comment:"Consistent quality every week. My kids actually ask for the chicken now.", customerName:"Amir H.", date:"2026-06-03" },
+  { id:"seed-3", boxKey:"flock", rating:4, comment:"Great value, chicken is always fresh. Would love a bit more variety in cuts.", customerName:"Fatima R.", date:"2026-05-28" },
+  { id:"seed-4", boxKey:"bull", rating:5, comment:"The sirloin steaks alone are worth the subscription.", customerName:"Omar B.", date:"2026-05-15" },
+  { id:"seed-5", boxKey:"riot", rating:4, comment:"Good mix of beef and lamb. Delivery is always on time.", customerName:"Leila M.", date:"2026-05-02" },
+];
+
+
+// Invoice generation — produces a formatted, printable HTML invoice from a
+// real order record and opens it in a new tab. No PDF library dependency:
+// the customer/admin uses the browser's own "Print → Save as PDF" to get a
+// PDF copy, which works reliably in every browser without extra setup. This
+// is a genuine, functional starting point — swap for server-side PDF
+// generation later if a fixed downloadable file (rather than print-to-PDF)
+// becomes a hard requirement.
+function openInvoice(order){
+  const VAT_RATE = 0.03;
+  const items = order.items || [];
+  const deliveryFee = order.deliveryFee ?? 0;
+  const total = order.total ?? 0;
+  const vatExcl = total / (1 + VAT_RATE);
+  const vatAmount = total - vatExcl;
+  const addr = order.deliverTo;
+
+  const rows = items.map(it => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;">${it.qty}× ${it.name}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">€${(it.price*it.qty).toFixed(2)}</td>
+    </tr>`).join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${order.id}</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#1C1917;max-width:640px;margin:40px auto;padding:0 20px;}
+    h1{font-size:22px;border-bottom:3px solid #D97950;padding-bottom:10px;}
+    table{width:100%;border-collapse:collapse;margin:16px 0;}
+    .muted{color:#78716C;font-size:13px;}
+    .total-row td{padding-top:12px;font-weight:700;font-size:16px;border-top:2px solid #1C1917;}
+    @media print{ button{display:none;} }
+  </style></head><body>
+    <h1>MEAT BEAST</h1>
+    <p class="muted">Invoice ${order.id} &nbsp;·&nbsp; Date: ${order.date} &nbsp;·&nbsp; Delivery: ${order.day || "—"}</p>
+    ${addr ? `<p class="muted">Billed to:<br>${addr.firstName||""} ${addr.lastName||""}<br>${addr.address||""}<br>${addr.zip||""} ${addr.city||""}<br>${addr.email||""}</p>` : ""}
+    <table>
+      ${rows || `<tr><td style="padding:8px 0;">${order.box}${order.tier?` · ${order.tier}`:""}</td><td style="text-align:right;">€${total.toFixed(2)}</td></tr>`}
+      <tr><td class="muted" style="padding-top:10px;">Subtotal (excl. VAT)</td><td class="muted" style="text-align:right;padding-top:10px;">€${vatExcl.toFixed(2)}</td></tr>
+      <tr><td class="muted">VAT (3% — Luxembourg super-reduced rate)</td><td class="muted" style="text-align:right;">€${vatAmount.toFixed(2)}</td></tr>
+      <tr><td class="muted">Delivery</td><td class="muted" style="text-align:right;">${deliveryFee===0?"Free":`€${deliveryFee.toFixed(2)}`}</td></tr>
+      <tr class="total-row"><td>Total</td><td style="text-align:right;">€${total.toFixed(2)}</td></tr>
+    </table>
+    <p class="muted">Nash SARL · Luxembourg · Halal certified — see meatbeast.lu/certifications</p>
+    <button onclick="window.print()" style="margin-top:20px;padding:10px 20px;background:#1C1917;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;">Print / Save as PDF</button>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if(w){ w.document.write(html); w.document.close(); }
+}
+
 
 /* ─── À LA CARTE CATALOG — sourced from MeatBeast_Pricing_Analysis.xlsx ───────
    All 39 fresh-meat lines from the butcher's Schedule A price list.
@@ -2336,10 +2475,14 @@ function getCuisineName(lang, key) {
 
 const MOCK_USERS = {
   "demo@meatbeast.lu": {
-    password:"demo1234", name:"Alex Müller",
+    password:"demo1234", name:"Alex Müller", role:"customer",
     orders:[{id:"#MB-1042",box:"The Crown",tier:"Beast Max",date:"2025-04-28",day:"Monday",time:"Morning",status:"delivered",total:46},{id:"#MB-1035",box:"The Bull",tier:"Beast Max",date:"2025-04-21",day:"Monday",time:"Morning",status:"delivered",total:58},{id:"#MB-1028",box:"The Crown",tier:"Beast Max",date:"2025-04-14",day:"Monday",time:"Morning",status:"delivered",total:46}],
     upcoming:[{id:"#MB-1049",box:"The Crown",tier:"Beast Max",date:"2025-05-05",day:"Monday",time:"Morning",status:"scheduled"},{id:"#MB-1056",box:"The Crown",tier:"Beast Max",date:"2025-05-12",day:"Monday",time:"Morning",status:"scheduled"},{id:"#MB-1063",box:"The Crown",tier:"Beast Max",date:"2025-05-19",day:"Monday",time:"Morning",status:"scheduled"}],
     sub:{box:"The Crown",tier:"Beast Max",status:"active",weeklyPrice:46,day:"Monday",time:"Morning"},
+  },
+  "admin@meatbeast.lu": {
+    password:"admin1234", name:"Operations Admin", role:"admin",
+    orders:[], upcoming:[], sub:null,
   }
 };
 const T = {
@@ -2455,11 +2598,37 @@ function calcDelivery(total){return total>=DELIVERY_FREE_THRESHOLD?0:DELIVERY_FE
 export default function App() {
   const [lang, setLang] = useState("en");
   const [view, setView] = useState("home");
+  const [referredByCode] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("ref") || null; } catch { return null; }
+  });
+  useEffect(() => { applySEO(view); trackEvent("page_view", {page_title:view}); }, [view]);
+  useEffect(() => { initAnalytics(); }, []);
+  const [cookieChoice, setCookieChoice] = useState(() => {
+    try { return localStorage.getItem("mb-cookie-consent") || null; } catch { return null; }
+  });
+  function setCookieConsent(choice){
+    try { localStorage.setItem("mb-cookie-consent", choice); } catch {}
+    setCookieChoice(choice);
+  }
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [extraUsers, setExtraUsers] = useState({});
   const [done, setDone] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
+  const [allOrders, setAllOrders] = useState([]);
+  // Stock/availability — true = in stock. Layered separately from the catalog
+  // data itself so toggling availability doesn't require touching product
+  // definitions. Admin view below reads/writes these.
+  const [boxStock, setBoxStock] = useState({ flock:true, riot:true, bull:true, crown:true });
+  const [reviews, setReviews] = useState(() => SEED_REVIEWS.slice());
+  function submitReview(boxKey, rating, comment){
+    if(!user || !rating) return;
+    setReviews(prev => [{
+      id: `rev-${Date.now()}`, boxKey, rating, comment: comment.trim(),
+      customerName: user.name || "Customer", date: new Date().toISOString().slice(0,10),
+    }, ...prev]);
+  }
+  const [alcStock, setAlcStock] = useState(() => Object.fromEntries(ALC_ITEMS.map(i=>[i.id,true])));
   const [pendingSub, setPendingSub] = useState(null);
   const [pendingALC, setPendingALC] = useState(null); // { items:[{id,name,price,qty}], boxName:string|null }
   const [boxDetail, setBoxDetail] = useState(null);
@@ -2476,6 +2645,7 @@ export default function App() {
   function go(v) { setView(v); setDone(false); window.scrollTo(0,0); }
 
   function addCart(item) {
+    trackEvent("add_to_cart", { item_name:item.name, value:item.price, currency:"EUR" });
     setCart(p=>{
       const incBy = item.qty || 1;
       const ex=p.find(c=>c.id===item.id);
@@ -2492,8 +2662,21 @@ export default function App() {
   function signup(email, pw, name) {
     const k=email.toLowerCase();
     if(allUsers[k]) return false;
-    const nu={password:pw,name,orders:[],upcoming:[],sub:null,savedBoxes:[]};
+    const nu={password:pw,name,role:"customer",orders:[],upcoming:[],sub:null,savedBoxes:[],referredBy:referredByCode||null};
     setExtraUsers(p=>({...p,[k]:nu}));
+
+    // Credit the referrer, if the signup arrived via a valid ?ref= link.
+    if(referredByCode){
+      const referrerEmail = Object.keys(allUsers).find(e => getReferralCode(e) === referredByCode);
+      if(referrerEmail){
+        setExtraUsers(p=>{
+          const referrer = allUsers[referrerEmail];
+          const updated = { ...referrer, referrals: [...(referrer.referrals||[]), {name, date:new Date().toISOString().slice(0,10)}] };
+          return { ...p, [referrerEmail]: updated };
+        });
+      }
+    }
+
     setUser({email:k,...nu}); return true;
   }
 
@@ -2552,7 +2735,33 @@ export default function App() {
     startALCOrder(savedBox.items, savedBox.name);
   }
 
-  function placeOrder() {
+  // Customer-initiated cancellation. Only allowed while the order is still
+  // "scheduled" — once it moves to "collected" (the butcher has already
+  // handed it to us) or "delivered", it's locked, matching the real-world
+  // cutoff (Saturday 16:00 order transmission) described in the business logic.
+  function cancelOrder(orderId){
+    if(!user) return;
+    setUser(p=>({
+      ...p,
+      upcoming: (p.upcoming||[]).filter(o=>o.id!==orderId),
+      orders: (p.orders||[]).map(o=>o.id===orderId?{...o,status:"cancelled"}:o),
+    }));
+    setAllOrders(prev=>prev.map(o=>o.id===orderId?{...o,status:"cancelled"}:o));
+  }
+
+  // Save a delivery address to the customer's profile for quick re-selection
+  // on future orders. Deduplicated by address+zip; keeps the 5 most recent.
+  function saveAddress(addr){
+    if(!user) return;
+    setUser(p=>{
+      const key = `${addr.address.toLowerCase()}|${addr.zip}`;
+      const existing = (p.savedAddresses||[]).filter(a => `${a.address.toLowerCase()}|${a.zip}` !== key);
+      return { ...p, savedAddresses: [{...addr, id:`addr-${Date.now()}`}, ...existing].slice(0,5) };
+    });
+  }
+
+  function placeOrder(deliverTo) {
+    trackEvent("purchase", { value: subtotal+deliveryFee, currency:"EUR", items: cart.length });
     const s=cart.find(i=>i.isMonthly);
     if(s&&user) setUser(p=>({...p,sub:{box:s.name,tier:s.tierLabel,status:"active",weeklyPrice:s.price,day:s.day,time:s.time}}));
 
@@ -2570,12 +2779,25 @@ export default function App() {
       else if(cart.some(i=>i.isCustomBox)){ const cb=cart.find(i=>i.isCustomBox); label=cb.name; tierLabel="Custom box"; }
       else { label=`À la Carte`; tierLabel=`${cart.reduce((n,i)=>n+i.qty,0)} item${cart.reduce((n,i)=>n+i.qty,0)>1?"s":""}`; }
       const today=new Date().toISOString().slice(0,10);
-      const newOrder={ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", status:"scheduled", total };
+      const newOrder={ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", status:"scheduled", total, deliverTo, items: cart.map(i=>({name:i.name, qty:i.qty, price:i.price})), deliveryFee };
       setUser(p=>({
         ...p,
         orders:[newOrder, ...(p.orders||[])],
-        upcoming:[{ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", time:scheduled?.time||"—", status:"scheduled" }, ...(p.upcoming||[])],
+        upcoming:[{ id:orderId, box:label, tier:tierLabel, date:today, day:scheduled?.day||"—", time:scheduled?.time||"—", status:"scheduled", deliverTo }, ...(p.upcoming||[])],
       }));
+
+      // Global order list — this is what the admin/operator view reads from.
+      // In the current mock-data setup, per-customer orders live nested inside
+      // each user object, which an admin screen has no way to see across all
+      // customers at once. This flat list exists specifically to make an
+      // admin view possible before a real backend replaces it.
+      setAllOrders(p=>[{
+        id: orderId, customerName: user.name, customerEmail: user.email,
+        box: label, tier: tierLabel, date: today, day: scheduled?.day||"—", time: scheduled?.time||"—",
+        status: "scheduled", total, deliveryFee,
+        items: cart.map(i=>({name:i.name, qty:i.qty, price:i.price})),
+        deliverTo,
+      }, ...p]);
     }
 
     // Snapshot exactly what was ordered, before the cart is cleared, so the
@@ -2586,6 +2808,7 @@ export default function App() {
       subtotal, deliveryFee, total: subtotal+deliveryFee,
       day: (cart.find(i=>i.day)||{}).day || null,
       time: (cart.find(i=>i.time)||{}).time || null,
+      deliverTo,
     });
 
     setCart([]); setDone(true);
@@ -2603,6 +2826,7 @@ export default function App() {
           ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#F9F7F4}::-webkit-scrollbar-thumb{background:#D4CFC8;border-radius:99px}
           @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
           .up{animation:up .4s ease both}
+          @keyframes wa-pulse{0%,100%{box-shadow:0 4px 16px rgba(0,0,0,.25),0 0 0 0 rgba(37,211,102,.5)}50%{box-shadow:0 4px 16px rgba(0,0,0,.25),0 0 0 8px rgba(37,211,102,0)}}
           .d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}.d4{animation-delay:.24s}.d5{animation-delay:.3s}
           .pb{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#1C1917;color:#F9F7F4;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;transition:all .17s;letter-spacing:.01em;white-space:nowrap}
           .pb:hover{background:#2D2925;transform:translateY(-1px);box-shadow:0 6px 20px rgba(28,25,23,.16)}
@@ -2685,18 +2909,68 @@ export default function App() {
           <span style={{fontSize:9,fontWeight:700,letterSpacing:".08em",writingMode:"vertical-rl",textOrientation:"mixed",transform:"rotate(180deg)"}}>HALAL CERTIFIED</span>
         </button>
 
+        {/* Floating WhatsApp support button — bottom corner, always accessible.
+            No backend required: this is a plain click-to-chat link. Replace
+            WHATSAPP_NUMBER below with the real business number before launch. */}
+        <a
+          href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I have a question about my Meat Beast order.")}`}
+          target="_blank" rel="noopener noreferrer"
+          aria-label="Chat with us on WhatsApp"
+          style={{
+            position:"fixed", bottom:24, [isRTL?"left":"right"]:24,
+            zIndex:36, width:56, height:56, borderRadius:"50%",
+            background:"#25D366", display:"flex", alignItems:"center", justifyContent:"center",
+            boxShadow:"0 4px 16px rgba(0,0,0,.25)", textDecoration:"none",
+            animation:"wa-pulse 2.4s ease-in-out infinite"
+          }}>
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.005c5.46 0 9.91-4.45 9.91-9.91C21.98 6.45 17.54 2 12.04 2zm5.8 14.05c-.24.68-1.4 1.3-1.93 1.38-.5.08-1.12.11-1.8-.11-.42-.13-.95-.3-1.64-.59-2.88-1.24-4.76-4.14-4.9-4.33-.14-.19-1.17-1.56-1.17-2.98s.73-2.11 1-2.4c.24-.27.53-.34.7-.34l.5.01c.16 0 .38-.06.6.45.24.57.8 1.98.87 2.12.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.37-.43.5-.14.14-.29.29-.13.57.17.28.75 1.24 1.6 2 1.11 1 2.04 1.31 2.32 1.46.28.14.44.12.6-.07.17-.19.72-.84.91-1.13.19-.28.38-.24.64-.14.27.1 1.68.79 1.97.93.28.14.47.21.54.33.07.12.07.68-.17 1.35z"/></svg>
+        </a>
+
+        {/* Cookie consent banner — EU/GDPR requirement, shows once until a choice is made */}
+        {!cookieChoice && (
+          <div style={{
+            position:"fixed", left:0, right:0, bottom:0, zIndex:60,
+            background:"#1C1917", padding:"16px 5%",
+            display:"flex", alignItems:"center", gap:16, flexWrap:"wrap",
+            boxShadow:"0 -4px 20px rgba(0,0,0,.2)"
+          }}>
+            <div style={{flex:1, minWidth:220, fontSize:13, color:"#D6D0C8", lineHeight:1.55}}>
+              🍪 {lang==="fr"?"Nous utilisons des cookies pour améliorer votre expérience et analyser le trafic du site.":
+                  lang==="de"?"Wir verwenden Cookies, um Ihre Erfahrung zu verbessern und den Website-Traffic zu analysieren.":
+                  lang==="lb"?"Mir benotzen Cookien fir Är Erfarung ze verbesseren an de Site-Traffic ze analyséieren.":
+                  lang==="bs"?"Koristimo kolačiće za poboljšanje vašeg iskustva i analizu prometa na sajtu.":
+                  lang==="pt"?"Utilizamos cookies para melhorar a sua experiência e analisar o tráfego do site.":
+                  lang==="ar"?"نستخدم ملفات تعريف الارتباط لتحسين تجربتك وتحليل حركة زيارة الموقع.":
+                  "We use cookies to improve your experience and analyse site traffic."}
+              {" "}
+              <button onClick={()=>setFooterPage("privacy")} style={{background:"none",border:"none",color:"#D97950",textDecoration:"underline",cursor:"pointer",fontSize:13,padding:0,fontFamily:"'Outfit',sans-serif"}}>
+                {lang==="fr"?"En savoir plus":lang==="de"?"Mehr erfahren":lang==="lb"?"Méi erfueren":lang==="bs"?"Saznaj više":lang==="pt"?"Saber mais":lang==="ar"?"معرفة المزيد":"Learn more"}
+              </button>
+            </div>
+            <div style={{display:"flex", gap:8, flexShrink:0}}>
+              <button onClick={()=>setCookieConsent("declined")} style={{background:"transparent",border:"1px solid #4A4540",color:"#A8A29E",borderRadius:8,padding:"9px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                {lang==="fr"?"Refuser":lang==="de"?"Ablehnen":lang==="lb"?"Ofleenen":lang==="bs"?"Odbij":lang==="pt"?"Recusar":lang==="ar"?"رفض":"Decline"}
+              </button>
+              <button onClick={()=>setCookieConsent("accepted")} style={{background:"#D97950",border:"none",color:"#fff",borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Outfit',sans-serif"}}>
+                {lang==="fr"?"Accepter":lang==="de"?"Akzeptieren":lang==="lb"?"Akzeptéieren":lang==="bs"?"Prihvati":lang==="pt"?"Aceitar":lang==="ar"?"قبول":"Accept"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {view==="home"      && <HomeV t={t} go={go} openRecipe={openRecipe} lang={lang}/>}
         {view==="certifications" && <CertificationsV go={go} lang={lang}/>}
-        {view==="boxes"     && <BoxesV t={t} go={go} onSelect={onSelectBox} openDetail={openBoxDetail} lang={lang}/>}
+        {view==="admin" && <AdminV user={user} go={go} allOrders={allOrders} setAllOrders={setAllOrders} boxStock={boxStock} setBoxStock={setBoxStock} alcStock={alcStock} setAlcStock={setAlcStock}/>}
+        {view==="boxes"     && <BoxesV t={t} go={go} onSelect={onSelectBox} openDetail={openBoxDetail} lang={lang} boxStock={boxStock}/>}
         {view==="allrecipes"&& <AllRecipesV go={go} openRecipe={openRecipe} lang={lang}/>}
-        {view==="boxdetail" && <BoxDetailV t={t} detail={boxDetail} go={go} onSelect={onSelectBox} openRecipe={openRecipe} lang={lang}/> }
+        {view==="boxdetail" && <BoxDetailV t={t} detail={boxDetail} go={go} onSelect={onSelectBox} openRecipe={openRecipe} lang={lang} reviews={reviews} submitReview={submitReview} user={user}/> }
         {view==="recipe"    && <RecipeV key={activeRecipeId+lang} recipeId={activeRecipeId} go={go} boxDetail={boxDetail} lang={lang}/>}
         {view==="schedule"  && <ScheduleV t={t} pending={pendingSub} pendingALC={pendingALC} onConfirm={confirmSchedule} go={go}/>}
-        {view==="alacarte"  && <AlaCV t={t} lang={lang} go={go} startALCOrder={startALCOrder} user={user} reorderSavedBox={reorderSavedBox}/>}
+        {view==="alacarte"  && <AlaCV t={t} lang={lang} go={go} startALCOrder={startALCOrder} user={user} reorderSavedBox={reorderSavedBox} alcStock={alcStock}/>}
         {view==="cart"      && <CartV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} setCart={setCart} go={go} user={user} lang={lang} openRecipe={openRecipe}/>}
-        {view==="checkout"  && <CoV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} place={placeOrder} done={done} go={go} user={user} lastOrder={lastOrder}/>}
+        {view==="checkout"  && <CoV t={t} cart={cart} subtotal={subtotal} deliveryFee={deliveryFee} place={placeOrder} done={done} go={go} user={user} lastOrder={lastOrder} saveAddress={saveAddress}/>}
         {view==="auth"      && <AuthV t={t} go={go} pendingSub={pendingSub} pendingALC={pendingALC}/>}
-        {view==="dash"      && <DashV t={t} user={user} go={go} updateSub={updateSub} reorderSavedBox={reorderSavedBox}/>}
+        {view==="dash"      && <DashV t={t} user={user} go={go} updateSub={updateSub} reorderSavedBox={reorderSavedBox} cancelOrder={cancelOrder}/>}
         {footerPage         && <FooterPageV page={footerPage} lang={lang} onClose={()=>setFooterPage(null)}/>}
 
         <footer style={{borderTop:"1px solid #EBE7E0",padding:"36px 5%",marginTop:80,background:"#fff"}}>
@@ -2749,6 +3023,7 @@ function Nav({t,lang,setLang,view,go,qty,user,logout}) {
         <nav className="mob-hide" style={{gap:2,alignItems:"center"}}>
           {["home","boxes","alacarte"].map(v=><button key={v} className={`nb${view===v?" on":""}`} onClick={()=>go(v)}>{t.nav[v]}</button>)}
           {user&&<button className={`nb${view==="dash"?" on":""}`} onClick={()=>go("dash")}>{t.nav.dash}</button>}
+          {user?.role==="admin"&&<button className={`nb${view==="admin"?" on":""}`} onClick={()=>go("admin")} style={{color:"#D97950"}}>⚙ Admin</button>}
         </nav>
 
         {/* Right cluster */}
@@ -2794,6 +3069,7 @@ function Nav({t,lang,setLang,view,go,qty,user,logout}) {
         <div style={{padding:"12px 5% 16px",borderTop:"1px solid #EBE7E0",display:"flex",flexDirection:"column",gap:4,background:"rgba(249,247,244,.98)"}}>
           {["home","boxes","alacarte"].map(v=><button key={v} className={`nb${view===v?" on":""}`} style={{textAlign:isRTL?"right":"left",padding:"10px 12px"}} onClick={()=>{go(v);setMobileOpen(false);}}>{t.nav[v]}</button>)}
           {user&&<button className={`nb${view==="dash"?" on":""}`} style={{textAlign:isRTL?"right":"left",padding:"10px 12px"}} onClick={()=>{go("dash");setMobileOpen(false);}}>{t.nav.dash}</button>}
+          {user?.role==="admin"&&<button className={`nb${view==="admin"?" on":""}`} style={{textAlign:isRTL?"right":"left",padding:"10px 12px",color:"#D97950"}} onClick={()=>{go("admin");setMobileOpen(false);}}>⚙ Admin</button>}
           {!user&&<button className="pb" style={{marginTop:4,width:"100%"}} onClick={()=>{go("auth");setMobileOpen(false);}}>{t.nav.login}</button>}
           {user&&<button className="nb" onClick={()=>{logout();setMobileOpen(false);}} style={{color:"#A8A29E",textAlign:isRTL?"right":"left",padding:"10px 12px"}}>{t.nav.logout}</button>}
           <button className="nb" onClick={()=>{go("certifications");setMobileOpen(false);}} style={{marginTop:8,display:"flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"#78716C",padding:"6px 4px"}}>
@@ -3009,7 +3285,7 @@ function HomeV({t,go,openRecipe,lang}) {
 }
 
 /* ─── BOXES ──────────────────────────────────────────────────────────────── */
-function BoxesV({t,go,onSelect,openDetail,lang}) {
+function BoxesV({t,go,onSelect,openDetail,lang,boxStock}) {
   const [tier, setTier] = useState("max");
   const tb = t.boxes;
   const activeTier = TIERS.find(tr=>tr.key===tier);
@@ -3044,10 +3320,12 @@ function BoxesV({t,go,onSelect,openDetail,lang}) {
           const pr=bx.price[tier];
           const bxt=getBox(lang,bx.key);
           const contents=bxt.contents[tier];
+          const soldOut = boxStock && boxStock[bx.key]===false;
           return(
-            <div key={bx.key} className={`card up d${i+1}`} style={{display:"flex",flexDirection:"column",overflow:"hidden",transition:"all .2s",border:bx.key==="crown"?"2px solid #1C1917":"1px solid #EBE7E0"}}
+            <div key={bx.key} className={`card up d${i+1}`} style={{display:"flex",flexDirection:"column",overflow:"hidden",transition:"all .2s",border:bx.key==="crown"?"2px solid #1C1917":"1px solid #EBE7E0",opacity:soldOut?0.6:1,position:"relative"}}
               onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 12px 40px rgba(0,0,0,.09)";e.currentTarget.style.transform="translateY(-3px)"}}
               onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
+              {soldOut && <div style={{position:"absolute",top:12,right:12,zIndex:5,background:"#C0392B",color:"#fff",fontSize:10,fontWeight:800,padding:"4px 10px",borderRadius:99,letterSpacing:".05em"}}>SOLD OUT THIS WEEK</div>}
               {bx.key==="crown"&&<div style={{background:"#1C1917",color:"#F9F7F4",fontSize:10,fontWeight:800,letterSpacing:".1em",textAlign:"center",padding:"6px",textTransform:"uppercase"}}>{tb.popular}</div>}
               <div style={{height:3,background:`linear-gradient(90deg,${bx.color},transparent)`}}/>
               <div style={{padding:"20px 20px 24px",flex:1,display:"flex",flexDirection:"column"}}>
@@ -3072,9 +3350,9 @@ function BoxesV({t,go,onSelect,openDetail,lang}) {
                     <span style={{fontSize:13,color:"#A8A29E"}}>{tb.weekly}</span>
                   </div>
                   <div style={{fontSize:11,color:"#B8B2AA",marginBottom:12}}>€{(pr/parseFloat(activeTier.range.replace("~","").split("–")[0])).toFixed(2)}{tb.perKg} est.</div>
-                  <button className="pb" style={{width:"100%",marginBottom:7,fontSize:13}} onClick={()=>onSelect(bx.key,tier,true)}>{tb.subscribe}</button>
+                  <button className="pb" style={{width:"100%",marginBottom:7,fontSize:13,opacity:soldOut?0.5:1,cursor:soldOut?"not-allowed":"pointer"}} disabled={soldOut} onClick={()=>!soldOut&&onSelect(bx.key,tier,true)}>{soldOut?"Sold out":tb.subscribe}</button>
                   <div style={{display:"flex",gap:7}}>
-                    <button className="ob" style={{flex:1,fontSize:12}} onClick={()=>onSelect(bx.key,tier,false)}>{tb.once}</button>
+                    <button className="ob" style={{flex:1,fontSize:12,opacity:soldOut?0.5:1,cursor:soldOut?"not-allowed":"pointer"}} disabled={soldOut} onClick={()=>!soldOut&&onSelect(bx.key,tier,false)}>{tb.once}</button>
                     <button className="ob" style={{fontSize:12,padding:"10px 14px"}} onClick={()=>openDetail(bx.key,tier)} title="View details">🔍</button>
                   </div>
                 </div>
@@ -3115,6 +3393,166 @@ function BoxesV({t,go,onSelect,openDetail,lang}) {
 /* ─── BOX DETAIL + RECIPE WIDGET ─────────────────────────────────────────── */
 
 /* ─── NEW BOX DETAIL with recipe grid ───────────────────────────────────── */
+function AdminV({user,go,allOrders,setAllOrders,boxStock,setBoxStock,alcStock,setAlcStock}){
+  const [tab,setTab]=useState("orders");
+  const [sortByZip,setSortByZip]=useState(false);
+  const [copiedAddrs,setCopiedAddrs]=useState(false);
+  if(!user || user.role!=="admin"){ go("home"); return null; }
+
+  const STATUS_FLOW = { scheduled:"collected", collected:"delivered", delivered:"delivered" };
+  const STATUS_COLOR = { scheduled:{bg:"#FFF3E8",tx:"#8A5A2B"}, collected:{bg:"#E6F1FB",tx:"#0C447C"}, delivered:{bg:"#EAF3DE",tx:"#27500A"} };
+
+  function advanceStatus(orderId){
+    setAllOrders(prev=>prev.map(o=>o.id===orderId?{...o,status:STATUS_FLOW[o.status]}:o));
+  }
+
+  const totalRevenue = allOrders.reduce((s,o)=>s+o.total,0);
+  const scheduledCount = allOrders.filter(o=>o.status==="scheduled").length;
+
+  // Route helper — orders awaiting collection, sorted by postal code so a
+  // delivery run can be planned roughly geographically without a full
+  // routing algorithm. "Copy addresses" builds a plain-text list ready to
+  // paste into Google Maps' multi-stop planner.
+  const scheduledOrders = allOrders.filter(o=>o.status==="scheduled" && o.deliverTo);
+  const displayOrders = sortByZip
+    ? [...allOrders].sort((a,b)=>{
+        const az=a.deliverTo?.zip||"9999", bz=b.deliverTo?.zip||"9999";
+        return az.localeCompare(bz);
+      })
+    : allOrders;
+
+  function copyAddressesForRoute(){
+    const lines = scheduledOrders
+      .sort((a,b)=>(a.deliverTo.zip||"").localeCompare(b.deliverTo.zip||""))
+      .map(o=>`${o.deliverTo.address}, ${o.deliverTo.zip} ${o.deliverTo.city}`);
+    try {
+      navigator.clipboard.writeText(lines.join("\n"));
+      setCopiedAddrs(true);
+      setTimeout(()=>setCopiedAddrs(false), 2000);
+    } catch {}
+  }
+
+  return(
+    <div style={{padding:"52px 5% 96px",maxWidth:1000,margin:"0 auto"}}>
+      <div className="up" style={{marginBottom:8}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:4}}>Operations</div>
+        <h1 className="serif" style={{fontSize:36,fontWeight:700,letterSpacing:"-.03em"}}>Admin Dashboard</h1>
+      </div>
+      <p className="up d1" style={{fontSize:14,color:"#78716C",marginBottom:28}}>Order management and live stock control. Visible only to admin accounts.</p>
+
+      <div className="up d1 g3r" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:28}}>
+        <div className="card" style={{padding:"16px 18px"}}><div style={{fontSize:11,color:"#A8A29E",marginBottom:4}}>Total orders</div><div style={{fontSize:26,fontWeight:900}}>{allOrders.length}</div></div>
+        <div className="card" style={{padding:"16px 18px"}}><div style={{fontSize:11,color:"#A8A29E",marginBottom:4}}>Awaiting collection</div><div style={{fontSize:26,fontWeight:900,color:"#D97950"}}>{scheduledCount}</div></div>
+        <div className="card" style={{padding:"16px 18px"}}><div style={{fontSize:11,color:"#A8A29E",marginBottom:4}}>Revenue (all orders)</div><div style={{fontSize:26,fontWeight:900,color:"#3D7A4E"}}>€{totalRevenue.toFixed(2)}</div></div>
+      </div>
+
+      <div className="up d1" style={{display:"flex",gap:8,marginBottom:22}}>
+        <button className={`seg${tab==="orders"?" on":""}`} onClick={()=>setTab("orders")}>Orders</button>
+        <button className={`seg${tab==="stock"?" on":""}`} onClick={()=>setTab("stock")}>Stock & Availability</button>
+      </div>
+
+      {tab==="orders" && (
+        allOrders.length===0 ? (
+          <div className="card up" style={{padding:"48px",textAlign:"center",color:"#A8A29E"}}>No orders placed yet.</div>
+        ) : (
+          <>
+          <div className="up d1" style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
+            <button className={`ob${sortByZip?" on":""}`} style={{fontSize:12,padding:"7px 14px",background:sortByZip?"#1C1917":"transparent",color:sortByZip?"#fff":"#1C1917"}} onClick={()=>setSortByZip(s=>!s)}>
+              📍 Sort by postal code
+            </button>
+            {scheduledOrders.length>0 && (
+              <button className="ob" style={{fontSize:12,padding:"7px 14px"}} onClick={copyAddressesForRoute}>
+                {copiedAddrs ? "✓ Copied" : `📋 Copy ${scheduledOrders.length} address${scheduledOrders.length>1?"es":""} for route planner`}
+              </button>
+            )}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {displayOrders.map((o,i)=>{
+              const sc=STATUS_COLOR[o.status];
+              return(
+              <div key={o.id} className={`card up d${Math.min(i+1,5)}`} style={{padding:"18px 20px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10,marginBottom:10}}>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700}}>{o.id} · {o.customerName}</div>
+                    <div style={{fontSize:12,color:"#A8A29E"}}>{o.customerEmail} · {o.box}{o.tier?` · ${o.tier}`:""}</div>
+                  </div>
+                  <span style={{fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:99,background:sc.bg,color:sc.tx,textTransform:"capitalize"}}>{o.status}</span>
+                </div>
+                {o.deliverTo ? (
+                  <div style={{fontSize:13,color:"#78716C",marginBottom:10,padding:"8px 12px",background:"#F9F7F4",borderRadius:8}}>
+                    📍 {o.deliverTo.firstName} {o.deliverTo.lastName} — {o.deliverTo.address}, {o.deliverTo.zip} {o.deliverTo.city} · ☎ {o.deliverTo.phone}
+                  </div>
+                ) : (
+                  <div style={{fontSize:12,color:"#C0392B",marginBottom:10}}>⚠ No delivery address on file for this order</div>
+                )}
+                <div style={{fontSize:12,color:"#78716C",marginBottom:10}}>
+                  {o.items.map((it,j)=>`${it.qty}× ${it.name}`).join(", ")}
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:12,color:"#A8A29E"}}>{o.date} · {o.day}{o.time?` · ${o.time}`:""}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:15,fontWeight:900}}>€{o.total.toFixed(2)}</span>
+                    <button className="ob" style={{fontSize:12,padding:"6px 10px"}} onClick={()=>openInvoice(o)} title="Download invoice">📄</button>
+                    {o.status!=="delivered" && (
+                      <button className="ob" style={{fontSize:12,padding:"6px 12px"}} onClick={()=>advanceStatus(o.id)}>
+                        Mark {STATUS_FLOW[o.status]} →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );})}
+          </div>
+          </>
+        )
+      )}
+
+      {tab==="stock" && (
+        <div className="up" style={{display:"flex",flexDirection:"column",gap:22}}>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".07em",textTransform:"uppercase",marginBottom:10}}>Subscription boxes</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}} className="g4r">
+              {BOXES.map(bx=>(
+                <div key={bx.key} className="card" style={{padding:"14px 16px",textAlign:"center"}}>
+                  <div style={{fontSize:22,marginBottom:6}}>{bx.icon}</div>
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>{bx.name}</div>
+                  <button
+                    onClick={()=>setBoxStock(p=>({...p,[bx.key]:!p[bx.key]}))}
+                    style={{width:"100%",padding:"7px 10px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,
+                      background: boxStock[bx.key] ? "#EAF3DE" : "#FCEBEE",
+                      color: boxStock[bx.key] ? "#27500A" : "#791F1F"}}>
+                    {boxStock[bx.key] ? "✓ In stock" : "✕ Sold out"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".07em",textTransform:"uppercase",marginBottom:10}}>À la carte — 39 items</div>
+            {["poultry","beef","veal","lamb"].map(cat=>(
+              <div key={cat} style={{marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#1C1917",textTransform:"capitalize",marginBottom:8}}>{cat}</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}} className="g3r">
+                  {ALC_ITEMS.filter(it=>it.cat===cat).map(it=>(
+                    <button key={it.id}
+                      onClick={()=>setAlcStock(p=>({...p,[it.id]:!p[it.id]}))}
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",borderRadius:8,border:"1px solid #EBE7E0",cursor:"pointer",
+                        background: alcStock[it.id] ? "#fff" : "#FCEBEE"}}>
+                      <span style={{fontSize:12,color: alcStock[it.id] ? "#1C1917" : "#791F1F",textAlign:"left"}}>{alcName(it,"en")}</span>
+                      <span style={{fontSize:10,fontWeight:700,flexShrink:0,marginLeft:6,color: alcStock[it.id] ? "#3D7A4E" : "#791F1F"}}>{alcStock[it.id]?"✓":"✕"}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CertificationsV({go,lang}){
   const L = {
     en:{title:"Our Halal Certifications",sub:"Every supplier in the Meat Beast chain is independently certified. Here is the actual paperwork — not just a badge.",back:"← Back",issuedBy:"Issued by",scope:"Scope",role:"Supplies",viewPdf:"View certificate (PDF)"},
@@ -3158,11 +3596,14 @@ function CertificationsV({go,lang}){
   );
 }
 
-function BoxDetailV({t,detail,go,onSelect,openRecipe,lang}){
+function BoxDetailV({t,detail,go,onSelect,openRecipe,lang,reviews,submitReview,user}){
   const isRTL = lang==="ar";
   const [tier,setTier]=useState(detail?.tierKey||"max");
   const [activeCuisine,setActiveCuisine]=useState("all");
   const [searchQ,setSearchQ]=useState("");
+  const [myRating,setMyRating]=useState(0);
+  const [myComment,setMyComment]=useState("");
+  const [hoverStar,setHoverStar]=useState(0);
   if(!detail){go("boxes");return null;}
   const bx=BOXES.find(b=>b.key===detail.boxKey);
   if(!bx){go("boxes");return null;}
@@ -3174,6 +3615,13 @@ function BoxDetailV({t,detail,go,onSelect,openRecipe,lang}){
     const ms=!searchQ||((rm.name||r.name).toLowerCase().includes(searchQ.toLowerCase())||r.desc.toLowerCase().includes(searchQ.toLowerCase()));
     return mc&&ms;
   });
+  const boxReviews = (reviews||[]).filter(r=>r.boxKey===bx.key);
+  const avgRating = boxReviews.length ? (boxReviews.reduce((s,r)=>s+r.rating,0)/boxReviews.length) : 0;
+  function handleSubmitReview(){
+    if(!myRating) return;
+    submitReview(bx.key, myRating, myComment);
+    setMyRating(0); setMyComment("");
+  }
   return(
     <div style={{padding:"48px 5% 96px",maxWidth:1100,margin:"0 auto"}}>
       <button className="nb up" onClick={()=>go("boxes")} style={{marginBottom:24,fontSize:13,color:"#A8A29E",display:"flex",alignItems:"center",gap:5}}>← Back to boxes</button>
@@ -3441,13 +3889,15 @@ function ScheduleV({t,pending,pendingALC,onConfirm,go}) {
 }
 
 /* ─── À LA CARTE ─────────────────────────────────────────────────────────── */
-function AlaCV({t,go,lang,startALCOrder,user,reorderSavedBox}) {
+function AlaCV({t,go,lang,startALCOrder,user,reorderSavedBox,alcStock}) {
   const fb=(key)=> (t.ac && t.ac[key]) || (AC_UI[lang]&&AC_UI[lang][key]) || AC_UI.en[key];
   const [mode,setMode]=useState("individual"); // "individual" | "byob"
   const [cat,setCat]=useState(0);
+  const [search,setSearch]=useState("");
   const cats=t.ac.cats; // [All, Poultry, Beef, Veal, Lamb]
   const catKeys=["all","poultry","beef","veal","lamb"];
-  const items=cat===0?ALC_ITEMS:ALC_ITEMS.filter(i=>i.cat===catKeys[cat]);
+  const catFiltered=cat===0?ALC_ITEMS:ALC_ITEMS.filter(i=>i.cat===catKeys[cat]);
+  const items=!search.trim() ? catFiltered : catFiltered.filter(i=>alcName(i,lang).toLowerCase().includes(search.trim().toLowerCase()));
   const [sel,setSel]=useState({}); // { itemId: qty }
   const [boxName,setBoxName]=useState("");
 
@@ -3509,21 +3959,40 @@ function AlaCV({t,go,lang,startALCOrder,user,reorderSavedBox}) {
         </div>
       )}
 
+      <div className="up d1" style={{position:"relative",marginBottom:16,maxWidth:360}}>
+        <input
+          className="inp"
+          value={search}
+          onChange={e=>setSearch(e.target.value)}
+          placeholder={lang==="fr"?"Rechercher un morceau…":lang==="de"?"Cut suchen…":lang==="lb"?"Stéck sichen…":lang==="bs"?"Pretraži komad…":lang==="pt"?"Pesquisar um corte…":lang==="ar"?"ابحث عن قطعة…":"Search a cut…"}
+          style={{paddingLeft:36}}
+        />
+        <span style={{position:"absolute",[lang==="ar"?"right":"left"]:12,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#A8A29E",pointerEvents:"none"}}>🔍</span>
+      </div>
+
       <div className="up d1" style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
         {cats.map((c,i)=><button key={i} className={`cpill${cat===i?" on":""}`} onClick={()=>setCat(i)}>{c}</button>)}
       </div>
 
+      {items.length===0 ? (
+        <div className="card up" style={{padding:"48px",textAlign:"center",color:"#A8A29E",marginBottom:100}}>
+          {lang==="fr"?"Aucun résultat pour":lang==="de"?"Keine Treffer für":lang==="lb"?"Keng Resultater fir":lang==="bs"?"Nema rezultata za":lang==="pt"?"Sem resultados para":lang==="ar"?"لا توجد نتائج لـ":"No results for"} "{search}"
+        </div>
+      ) : (
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:100}} className="g3r">
         {items.map((item,i)=>{
           const qty=sel[item.id]||0;
+          const outOfStock = alcStock && alcStock[item.id]===false;
           return(
-          <div key={item.id} className="card up" style={{padding:"16px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,transition:"border .15s",animationDelay:`${i*.03}s`,borderColor:qty>0?"#D97950":"#EBE7E0"}}>
+          <div key={item.id} className="card up" style={{padding:"16px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,transition:"border .15s",animationDelay:`${i*.03}s`,borderColor:qty>0?"#D97950":"#EBE7E0",opacity:outOfStock?0.55:1}}>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{alcName(item,lang)}</div>
-              <div style={{fontSize:12,color:"#A8A29E",marginTop:1}}>{item.w}</div>
+              <div style={{fontSize:12,color:outOfStock?"#C0392B":"#A8A29E",marginTop:1,fontWeight:outOfStock?700:400}}>{outOfStock?"Out of stock this week":item.w}</div>
               <div style={{fontSize:17,fontWeight:900,marginTop:5}}>€{item.p.toFixed(2)}</div>
             </div>
-            {qty===0?(
+            {outOfStock ? (
+              <div style={{flexShrink:0,padding:"8px 14px",borderRadius:9,fontSize:12,fontWeight:700,color:"#A8A29E",minWidth:78,textAlign:"center"}}>Unavailable</div>
+            ) : qty===0?(
               <button style={{flexShrink:0,padding:"8px 14px",borderRadius:9,border:"1.5px solid #E2DDD6",background:"transparent",color:"#1C1917",cursor:"pointer",fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:700,transition:"all .18s",minWidth:78,textAlign:"center"}} onClick={()=>inc(item.id)}>
                 {t.ac.add}
               </button>
@@ -3537,6 +4006,7 @@ function AlaCV({t,go,lang,startALCOrder,user,reorderSavedBox}) {
           </div>
         );})}
       </div>
+      )}
 
       {/* Sticky selection bar */}
       {selCount>0 && (
@@ -3714,10 +4184,66 @@ function AuthV({t,go,pendingSub,pendingALC}) {
 }
 
 /* ─── CHECKOUT ───────────────────────────────────────────────────────────── */
-function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder}) {
+function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder,saveAddress}) {
   const tc=t.co; const hasSub=cart.some(i=>i.isMonthly); const grand=subtotal+deliveryFee;
+  // Luxembourg VAT super-reduced rate (3%) applies to fresh meat. Prices are
+  // stored VAT-inclusive throughout the app, so this backs out what portion
+  // of the total is VAT for display purposes only — it does not change the
+  // amount charged.
+  const VAT_RATE = 0.03;
+  const vatExcl = grand / (1 + VAT_RATE);
+  const vatAmount = grand - vatExcl;
+  useEffect(() => { if(!done && cart.length>0) trackEvent("begin_checkout", { value:grand, currency:"EUR" }); }, []);
+
+  const [form,setForm]=useState({
+    firstName: user?.name?.split(" ")[0]||"",
+    lastName: user?.name?.split(" ").slice(1).join(" ")||"",
+    email: user?.email||"",
+    phone: "",
+    address: "",
+    city: "Luxembourg",
+    zip: "",
+  });
+  const [touched,setTouched]=useState(false);
+  const upd=(field)=>(e)=>setForm(p=>({...p,[field]:e.target.value}));
+
   if(!user){ go("auth"); return null; }
   if(cart.length===0 && !done){ go("cart"); return null; }
+
+  // Luxembourg postal codes are 4-digit numeric (L-1000 to L-9999). This is a
+  // basic sanity check, not a full delivery-zone/route validation — but it
+  // catches the obvious case of an address outside the country before an
+  // order is placed for somewhere that can never actually be delivered.
+  const zipFormatValid = /^\d{4}$/.test(form.zip.trim());
+  const zipInZone = zipFormatValid && inDeliveryZone(form.zip.trim());
+  const zipValid = zipInZone;
+  const errors = {
+    firstName: !form.firstName.trim(),
+    lastName: !form.lastName.trim(),
+    phone: !form.phone.trim(),
+    address: !form.address.trim(),
+    city: !form.city.trim(),
+    zip: !zipValid,
+  };
+  const isValid = !Object.values(errors).some(Boolean);
+  const errBorder = (field) => touched && errors[field] ? {borderColor:"#C0392B"} : {};
+
+  function handlePlace(){
+    setTouched(true);
+    if(!isValid) return;
+    const deliverTo = {
+      firstName: form.firstName.trim(), lastName: form.lastName.trim(),
+      email: form.email.trim(), phone: form.phone.trim(),
+      address: form.address.trim(), city: form.city.trim(), zip: form.zip.trim(),
+    };
+    if(saveAddress) saveAddress(deliverTo);
+    place(deliverTo);
+  }
+
+  function useSavedAddress(addr){
+    setForm(p=>({...p, phone:addr.phone, address:addr.address, city:addr.city, zip:addr.zip}));
+  }
+
   if(done) return(
     <div style={{padding:"100px 5%",textAlign:"center",maxWidth:480,margin:"0 auto"}}>
       <div style={{width:64,height:64,borderRadius:"50%",background:"#EFF6EC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 24px"}}>✓</div>
@@ -3730,6 +4256,11 @@ function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder}) {
             <div style={{fontSize:12,fontWeight:700,color:"#A8A29E",letterSpacing:".06em",textTransform:"uppercase"}}>{lastOrder.id||"Your order"}</div>
             {lastOrder.day && <div style={{fontSize:12,fontWeight:700,background:"#F5F2EE",padding:"3px 10px",borderRadius:99}}>📅 {lastOrder.day}{lastOrder.time?` · ${lastOrder.time}`:""}</div>}
           </div>
+          {lastOrder.deliverTo && (
+            <div style={{fontSize:13,color:"#78716C",marginBottom:14,paddingBottom:14,borderBottom:"1px solid #EBE7E0"}}>
+              📍 {lastOrder.deliverTo.address}, {lastOrder.deliverTo.zip} {lastOrder.deliverTo.city}
+            </div>
+          )}
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
             {lastOrder.items.map((it,i)=>(
               <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:14}}>
@@ -3760,16 +4291,38 @@ function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder}) {
         {["Visa","MC","Amex"].map(c=><span key={c} style={{fontSize:10,fontWeight:700,color:"#78716C",background:"#EBE7E0",padding:"3px 7px",borderRadius:5}}>{c}</span>)}
       </div>
       <div className="up d2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <input className="inp" placeholder={tc.fname} defaultValue={user.name?.split(" ")[0]}/>
-        <input className="inp" placeholder={tc.lname} defaultValue={user.name?.split(" ")[1]||""}/>
+        <input className="inp" placeholder={tc.fname} value={form.firstName} onChange={upd("firstName")} style={errBorder("firstName")}/>
+        <input className="inp" placeholder={tc.lname} value={form.lastName} onChange={upd("lastName")} style={errBorder("lastName")}/>
       </div>
-      <input className="inp" placeholder={tc.email} defaultValue={user.email} style={{marginBottom:10,display:"block"}}/>
-      <input className="inp" placeholder={tc.phone} style={{marginBottom:10,display:"block"}}/>
-      <input className="inp" placeholder={tc.addr} style={{marginBottom:10,display:"block"}}/>
-      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10,marginBottom:24}}>
-        <input className="inp" placeholder={tc.city} defaultValue="Luxembourg"/>
-        <input className="inp" placeholder={tc.zip}/>
+      <input className="inp" placeholder={tc.email} value={form.email} onChange={upd("email")} style={{marginBottom:10,display:"block"}}/>
+      <input className="inp" placeholder={tc.phone} value={form.phone} onChange={upd("phone")} style={{marginBottom:10,display:"block",...errBorder("phone")}}/>
+      {user.savedAddresses?.length>0 && (
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".06em",textTransform:"uppercase",marginBottom:8}}>Saved addresses</div>
+          <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
+            {user.savedAddresses.map(addr=>(
+              <button key={addr.id} onClick={()=>useSavedAddress(addr)} type="button"
+                style={{flexShrink:0,textAlign:"left",padding:"9px 14px",borderRadius:9,border:"1.5px solid #E2DDD6",background:"#fff",cursor:"pointer",fontFamily:"'Outfit',sans-serif",maxWidth:220}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#1C1917",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>📍 {addr.address}</div>
+                <div style={{fontSize:11,color:"#A8A29E"}}>{addr.zip} {addr.city}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <input className="inp" placeholder={tc.addr} value={form.address} onChange={upd("address")} style={{marginBottom:10,display:"block",...errBorder("address")}}/>
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10,marginBottom:6}}>
+        <input className="inp" placeholder={tc.city} value={form.city} onChange={upd("city")} style={errBorder("city")}/>
+        <input className="inp" placeholder={tc.zip} value={form.zip} onChange={upd("zip")} maxLength={4} style={errBorder("zip")}/>
       </div>
+      {touched && !isValid && (
+        <div style={{fontSize:12,color:"#C0392B",marginBottom:18,fontWeight:600}}>
+          {errors.zip && form.zip.trim() && !zipFormatValid ? "Postal code must be a valid 4-digit Luxembourg code (e.g. 1234)." :
+           errors.zip && form.zip.trim() && zipFormatValid && !zipInZone ? "Sorry — we don't currently deliver to this postal code. We cover Luxembourg City, Esch, Differdange, Dudelange, Ettelbruck and Diekirch." :
+           "Please complete all delivery fields before placing your order."}
+        </div>
+      )}
+      {!touched && <div style={{marginBottom:24}}/>}
       <div style={{borderTop:"1px solid #EBE7E0",paddingTop:22,marginBottom:22}}>
         <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".08em",textTransform:"uppercase",marginBottom:12}}>{tc.pay}</div>
         <div style={{position:"relative",marginBottom:10}}>
@@ -3781,23 +4334,73 @@ function CoV({t,cart,subtotal,deliveryFee,place,done,go,user,lastOrder}) {
         </div>
       </div>
       <div style={{background:"#F5F2EE",border:"1px solid #EBE7E0",borderRadius:10,padding:"14px 18px",marginBottom:18}}>
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10,paddingBottom:10,borderBottom:"1px solid #E2DDD6"}}>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#78716C"}}>
+            <span>Subtotal (excl. VAT)</span><span>€{vatExcl.toFixed(2)}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#78716C"}}>
+            <span>VAT (3% — Luxembourg super-reduced rate, fresh meat)</span><span>€{vatAmount.toFixed(2)}</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#78716C"}}>
+            <span>Delivery</span><span>{deliveryFee===0?"Free":`€${deliveryFee.toFixed(2)}`}</span>
+          </div>
+        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:14,color:"#78716C"}}>{t.cart.total}</div>
             {deliveryFee===0&&<div style={{fontSize:11,color:"#3D7A4E",fontWeight:600}}>🎉 Free delivery</div>}
-            {deliveryFee>0&&<div style={{fontSize:11,color:"#78716C"}}>Incl. €{deliveryFee} delivery</div>}
           </div>
           <span style={{fontSize:24,fontWeight:900}}>€{grand.toFixed(2)}</span>
         </div>
         {hasSub&&<p style={{fontSize:11,color:"#A8A29E",marginTop:7}}>{tc.note}</p>}
       </div>
-      <button className="pb" style={{width:"100%",padding:15,fontSize:15}} onClick={place}>{tc.place} 🔒</button>
+      <button className="pb" style={{width:"100%",padding:15,fontSize:15}} onClick={handlePlace}>{tc.place} 🔒</button>
     </div>
   );
 }
 
 /* ─── DASHBOARD ──────────────────────────────────────────────────────────── */
-function DashV({t,user,go,updateSub,reorderSavedBox}) {
+function ReferralWidget({user}){
+  const [copied,setCopied]=useState(false);
+  if(!user) return null;
+  const code = getReferralCode(user.email);
+  const link = `${typeof window!=="undefined"?window.location.origin:"https://meatbeast.lu"}?ref=${code}`;
+  const referrals = user.referrals || [];
+
+  function copyLink(){
+    try {
+      navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(()=>setCopied(false), 2000);
+    } catch {}
+  }
+
+  return(
+    <div className="card up d1" style={{padding:"18px 22px",marginBottom:24}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:18}}>🤝</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#1C1917"}}>Refer a Friend</span>
+        </div>
+        {referrals.length>0 && (
+          <span style={{fontSize:11,fontWeight:700,background:"#EAF3DE",color:"#27500A",padding:"3px 12px",borderRadius:99}}>
+            {referrals.length} friend{referrals.length>1?"s":""} referred
+          </span>
+        )}
+      </div>
+      <p style={{fontSize:12,color:"#78716C",marginBottom:12,lineHeight:1.5}}>
+        Share your link — when a friend signs up and qualifies, you both get +3 draw entries that month.
+      </p>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <input readOnly value={link} className="inp" style={{flex:1,minWidth:200,fontSize:12,color:"#78716C"}} onClick={e=>e.target.select()}/>
+        <button className="pb" style={{fontSize:12,padding:"9px 16px",flexShrink:0}} onClick={copyLink}>{copied?"✓ Copied":"Copy link"}</button>
+      </div>
+    </div>
+  );
+}
+
+function DashV({t,user,go,updateSub,reorderSavedBox,cancelOrder}) {
+  const [confirmCancelId,setConfirmCancelId]=useState(null);
   const [cc,setCc]=useState(false);
   const m=t.dash;
   if(!user){ go("auth"); return null; }
@@ -3805,6 +4408,20 @@ function DashV({t,user,go,updateSub,reorderSavedBox}) {
   const sc={active:{bg:"#EFF6EC",col:"#3D7A4E",dot:"#3D7A4E"},paused:{bg:"#FEF5EE",col:"#D97950",dot:"#D97950"},cancelled:{bg:"#FEF0F0",col:"#B94040",dot:"#B94040"}};
   const ss=sub?sc[sub.status]||sc.active:null;
   function badge(s){ const c={scheduled:{bg:"#EEF2FE",col:"#4A6BB5"},delivered:{bg:"#EFF6EC",col:"#3D7A4E"},active:{bg:"#EFF6EC",col:"#3D7A4E"},paused:{bg:"#FEF5EE",col:"#D97950"},cancelled:{bg:"#FEF0F0",col:"#B94040"}}[s]||{bg:"#F5F3F0",col:"#78716C"}; return <span style={{padding:"2px 10px",borderRadius:99,fontSize:11,fontWeight:700,background:c.bg,color:c.col}}>{m.status[s]||s}</span>; }
+
+  // Draw eligibility — combined spend (subscription + à la carte + BYOB, any
+  // mix) in the current calendar month, per the €150 threshold rule. Cancelled
+  // orders don't count. Orders placed in earlier demo months naturally won't
+  // show here — this reflects real orders placed in the live calendar month.
+  const now = new Date();
+  const monthSpend = (user.orders||[])
+    .filter(o => o.status!=="cancelled" && o.date && new Date(o.date).getMonth()===now.getMonth() && new Date(o.date).getFullYear()===now.getFullYear())
+    .reduce((sum,o)=>sum+(o.total||0),0);
+  const DRAW_THRESHOLD = 150;
+  const drawEligible = monthSpend >= DRAW_THRESHOLD;
+  const drawEntries = monthSpend>=500?3:monthSpend>=300?2:monthSpend>=150?1:0;
+  const drawPct = Math.min(100, (monthSpend/DRAW_THRESHOLD)*100);
+
   return(
     <div style={{padding:"52px 5% 96px",maxWidth:880,margin:"0 auto"}}>
       <div className="up" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:14,marginBottom:32}}>
@@ -3814,6 +4431,34 @@ function DashV({t,user,go,updateSub,reorderSavedBox}) {
         </div>
         <button className="ob" onClick={()=>go("boxes")} style={{fontSize:13}}>{m.change} →</button>
       </div>
+
+      {/* Lucky draw eligibility tracker — live progress toward €150/month combined spend */}
+      <div className="card up d1" style={{padding:"18px 22px",marginBottom:24,background:drawEligible?"#FDF6EE":"#F9F7F4"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:18}}>🎁</span>
+            <span style={{fontSize:13,fontWeight:700,color:"#1C1917"}}>Monthly Lucky Draw</span>
+          </div>
+          {drawEligible ? (
+            <span style={{fontSize:11,fontWeight:700,background:"#EAF3DE",color:"#27500A",padding:"3px 12px",borderRadius:99}}>
+              ✓ You're in — {drawEntries} {drawEntries===1?"entry":"entries"} this month
+            </span>
+          ) : (
+            <span style={{fontSize:11,fontWeight:700,background:"#FEF5EE",color:"#D97950",padding:"3px 12px",borderRadius:99}}>
+              €{(DRAW_THRESHOLD-monthSpend).toFixed(2)} away
+            </span>
+          )}
+        </div>
+        <div style={{height:8,background:"#EBE7E0",borderRadius:99,overflow:"hidden",marginBottom:6}}>
+          <div style={{height:"100%",width:`${drawPct}%`,background:drawEligible?"#3D7A4E":"#D97950",borderRadius:99,transition:"width .4s ease"}}/>
+        </div>
+        <div style={{fontSize:11,color:"#A8A29E"}}>
+          €{monthSpend.toFixed(2)} spent this month · qualify at €150, more entries at €300 and €500
+        </div>
+      </div>
+
+      {/* Refer a friend — +3 draw entries the month a referred friend also qualifies */}
+      <ReferralWidget user={user}/>
 
       {(!sub && !user.orders?.length && !user.upcoming?.length && !user.savedBoxes?.length)?(
         <div className="card up d1" style={{padding:"56px",textAlign:"center"}}>
@@ -3896,12 +4541,25 @@ function DashV({t,user,go,updateSub,reorderSavedBox}) {
               <div style={{fontSize:11,fontWeight:700,color:"#A8A29E",letterSpacing:".09em",textTransform:"uppercase",marginBottom:10}}>{m.upcoming}</div>
               <div style={{display:"flex",flexDirection:"column",gap:7}}>
                 {user.upcoming.map((o,i)=>(
-                  <div key={o.id} className="card" style={{padding:"13px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
+                  <div key={o.id} className="card" style={{padding:"13px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:180}}>
                       <div style={{width:34,height:34,borderRadius:8,background:"#F5F2EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📦</div>
                       <div><div style={{fontSize:14,fontWeight:700}}>{o.box}{o.tier?` · ${o.tier}`:""}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.date} · {o.day}{o.time?` · ${o.time}`:""}</div></div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>{badge(o.status)}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      {badge(o.status)}
+                      {o.status==="scheduled" && cancelOrder && (
+                        confirmCancelId===o.id ? (
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{fontSize:11,color:"#78716C"}}>Cancel this order?</span>
+                            <button className="rb" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>{cancelOrder(o.id);setConfirmCancelId(null);}}>Yes</button>
+                            <button className="ob" style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setConfirmCancelId(null)}>No</button>
+                          </div>
+                        ) : (
+                          <button className="ob" style={{fontSize:11,padding:"4px 10px",color:"#A8A29E"}} onClick={()=>setConfirmCancelId(o.id)}>Cancel</button>
+                        )
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3919,7 +4577,11 @@ function DashV({t,user,go,updateSub,reorderSavedBox}) {
                       <div style={{fontSize:18}}>✓</div>
                       <div><div style={{fontSize:14,fontWeight:700}}>{o.box}{o.tier?` · ${o.tier}`:""}</div><div style={{fontSize:12,color:"#A8A29E"}}>{o.id} · {o.date} · {o.day}</div></div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>{badge(o.status)}<span style={{fontSize:14,fontWeight:900}}>€{o.total.toFixed(2)}</span></div>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      {badge(o.status)}
+                      <span style={{fontSize:14,fontWeight:900}}>€{o.total.toFixed(2)}</span>
+                      <button className="ob" style={{fontSize:11,padding:"5px 10px"}} onClick={()=>openInvoice(o)} title="Download invoice">📄</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -4014,6 +4676,56 @@ function FooterPageV({page,lang,onClose}){
             ))}
           </div>
         )}
+
+        {/* Reviews & ratings */}
+        <div style={{marginTop:36,paddingTop:28,borderTop:"1px solid #EBE7E0"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
+            <h3 className="serif" style={{fontSize:22,fontWeight:700}}>Reviews</h3>
+            {boxReviews.length>0 && (
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{color:"#D97950",fontSize:16}}>{"★".repeat(Math.round(avgRating))}{"☆".repeat(5-Math.round(avgRating))}</span>
+                <span style={{fontSize:13,fontWeight:700}}>{avgRating.toFixed(1)}</span>
+                <span style={{fontSize:12,color:"#A8A29E"}}>({boxReviews.length} review{boxReviews.length>1?"s":""})</span>
+              </div>
+            )}
+          </div>
+
+          {user ? (
+            <div className="card" style={{padding:"18px 20px",marginBottom:20}}>
+              <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Leave a review</div>
+              <div style={{display:"flex",gap:4,marginBottom:12}}>
+                {[1,2,3,4,5].map(n=>(
+                  <button key={n} type="button" onClick={()=>setMyRating(n)} onMouseEnter={()=>setHoverStar(n)} onMouseLeave={()=>setHoverStar(0)}
+                    style={{background:"none",border:"none",cursor:"pointer",fontSize:24,padding:0,color:(hoverStar||myRating)>=n?"#D97950":"#E2DDD6"}}>★</button>
+                ))}
+              </div>
+              <textarea value={myComment} onChange={e=>setMyComment(e.target.value)} placeholder="What did you think? (optional)" rows={3}
+                className="inp" style={{width:"100%",resize:"vertical",marginBottom:10,fontFamily:"'Outfit',sans-serif"}}/>
+              <button className="pb" style={{fontSize:13,padding:"9px 18px"}} disabled={!myRating} onClick={handleSubmitReview}>Submit review</button>
+            </div>
+          ) : (
+            <div style={{fontSize:13,color:"#A8A29E",marginBottom:20}}>
+              <button className="nb" onClick={()=>go("auth")} style={{color:"#D97950",fontWeight:700}}>Sign in</button> to leave a review.
+            </div>
+          )}
+
+          {boxReviews.length===0 ? (
+            <div style={{fontSize:13,color:"#A8A29E"}}>No reviews yet — be the first.</div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {boxReviews.map(r=>(
+                <div key={r.id} className="card" style={{padding:"14px 18px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,flexWrap:"wrap",gap:6}}>
+                    <div style={{fontSize:13,fontWeight:700}}>{r.customerName}</div>
+                    <div style={{color:"#D97950",fontSize:13}}>{"★".repeat(r.rating)}{"☆".repeat(5-r.rating)}</div>
+                  </div>
+                  {r.comment && <p style={{fontSize:13,color:"#78716C",lineHeight:1.55,marginBottom:6}}>{r.comment}</p>}
+                  <div style={{fontSize:11,color:"#A8A29E"}}>{r.date}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <button onClick={()=>go("certifications")} style={{marginTop:28,padding:"20px 20px",background:"#1C1917",borderRadius:12,display:"flex",alignItems:"center",gap:14,width:"100%",border:"none",cursor:"pointer",textAlign:isRTL?"right":"left",fontFamily:"'Outfit',sans-serif"}}>
           <div style={{width:40,height:40,borderRadius:"50%",background:"rgba(217,121,80,.2)",border:"1px solid rgba(217,121,80,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>📄</div>
@@ -4115,7 +4827,7 @@ function AllRecipesV({go, openRecipe, lang}) {
       <button className="nb" onClick={()=>go("home")} style={{fontSize:13,color:"#A8A29E",marginBottom:24,display:"flex",alignItems:"center",gap:5}}>← Back</button>
       <div className="up" style={{marginBottom:36}}>
         <div style={{fontSize:11,fontWeight:700,color:"#D97950",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8}}>Included free with every box</div>
-        <h1 className="serif" style={{fontSize:48,fontWeight:700,letterSpacing:"-.03em",marginBottom:8}}>All 46 Recipes</h1>
+        <h1 className="serif" style={{fontSize:48,fontWeight:700,letterSpacing:"-.03em",marginBottom:8}}>All 62 Recipes</h1>
         <p style={{fontSize:15,color:"#78716C"}}>Classic · BBQ · Arabic · Indian · Asian. Browse, filter, cook.</p>
       </div>
 
